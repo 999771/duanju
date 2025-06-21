@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>短剧搜索平台</title>
+    <title>短剧搜索平台 - Cloudflare优化版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.3/dist/hls.min.js"></script>
     <style>
@@ -626,6 +626,36 @@
             color: white;
         }
         
+        .debug-panel {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border);
+        }
+        
+        .debug-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .debug-content {
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
         @media (max-width: 992px) {
             .container {
                 padding: 15px;
@@ -806,15 +836,23 @@
                     <i class="fas fa-info-circle"></i>
                     <span id="proxy-info-text">当前使用直接播放模式，如遇问题请尝试代理模式</span>
                 </div>
+                
+                <div class="debug-panel">
+                    <div class="debug-title">
+                        <i class="fas fa-bug"></i> 调试信息
+                    </div>
+                    <div class="debug-content" id="debug-output">等待播放信息...</div>
+                </div>
+                
                 <div class="tech-info">
                     <div class="tech-item">
-                        <i class="fas fa-bolt"></i> 双轨播放系统
+                        <i class="fas fa-bolt"></i> Cloudflare优化
                     </div>
                     <div class="tech-item">
-                        <i class="fas fa-globe"></i> 智能格式检测
+                        <i class="fas fa-globe"></i> 前端代理技术
                     </div>
                     <div class="tech-item">
-                        <i class="fas fa-cloud"></i> Cloudflare优化
+                        <i class="fas fa-video"></i> 智能格式检测
                     </div>
                 </div>
             </div>
@@ -841,6 +879,7 @@
         const currentApiIndicator = document.getElementById('current-api');
         const proxyInfoText = document.getElementById('proxy-info-text');
         const modeButtons = document.querySelectorAll('.mode-btn');
+        const debugOutput = document.getElementById('debug-output');
         
         // 分页相关变量
         let currentPage = 1;
@@ -853,6 +892,7 @@
         let currentSearchResults = [];
         let hls = null;
         let currentPlayMode = 'direct'; // 'direct' 或 'proxy'
+        let currentProxyUrl = '';
         
         // 初始API列表
         const INITIAL_API_LIST = [
@@ -879,6 +919,13 @@
         // 当前使用的代理索引
         let currentProxyIndex = 0;
         
+        // 添加调试信息
+        function addDebugInfo(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugOutput.textContent += `[${timestamp}] ${message}\n`;
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+        }
+        
         // 显示错误消息
         function showError(message) {
             errorContainer.innerHTML = `
@@ -887,6 +934,7 @@
                     ${message}
                 </div>
             `;
+            addDebugInfo(`错误: ${message}`);
         }
         
         // 清除错误消息
@@ -897,6 +945,7 @@
         // 更新API状态指示器
         function updateApiStatus(status) {
             currentApiIndicator.textContent = `服务状态: ${status}`;
+            addDebugInfo(`状态更新: ${status}`);
         }
         
         // 初始化
@@ -924,6 +973,8 @@
                         proxyInfoText.textContent = '当前使用代理播放模式，加载可能需要10-20秒';
                     }
                     
+                    addDebugInfo(`切换到播放模式: ${currentPlayMode}`);
+                    
                     // 重新播放当前剧集
                     const activeEpisode = document.querySelector('.episode-btn.active');
                     if (activeEpisode) {
@@ -932,37 +983,58 @@
                     }
                 });
             });
+            
+            // 初始化调试信息
+            addDebugInfo('系统初始化完成');
+            addDebugInfo('本地代理技术已启用');
+            addDebugInfo('Cloudflare优化模式激活');
         });
         
         // 使用代理获取数据
         async function fetchWithProxy(url) {
-            const proxyUrl = PROXY_SERVICES[currentProxyIndex] + encodeURIComponent(url);
+            addDebugInfo(`开始请求: ${url}`);
             
             try {
-                const response = await fetch(proxyUrl, {
+                let finalUrl = url;
+                
+                if (currentPlayMode === 'proxy') {
+                    const proxyService = PROXY_SERVICES[currentProxyIndex];
+                    finalUrl = proxyService + encodeURIComponent(url);
+                    addDebugInfo(`使用代理: ${proxyService}`);
+                }
+                
+                const response = await fetch(finalUrl, {
                     headers: {
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`代理请求失败: ${response.status}`);
+                    throw new Error(`请求失败: ${response.status}`);
                 }
                 
-                return response.json();
+                const data = await response.json();
+                addDebugInfo(`请求成功: ${url}`);
+                return data;
             } catch (error) {
-                console.error(`代理 ${PROXY_SERVICES[currentProxyIndex]} 失败:`, error);
+                console.error('请求失败:', error);
+                addDebugInfo(`请求失败: ${error.message}`);
                 
-                // 切换到下一个代理
-                currentProxyIndex = (currentProxyIndex + 1) % PROXY_SERVICES.length;
-                console.log(`切换到代理: ${PROXY_SERVICES[currentProxyIndex]}`);
-                
-                if (currentProxyIndex === 0) {
-                    throw new Error('所有代理服务均失败，请稍后重试');
+                if (currentPlayMode === 'proxy') {
+                    // 切换到下一个代理
+                    currentProxyIndex = (currentProxyIndex + 1) % PROXY_SERVICES.length;
+                    addDebugInfo(`切换到代理: ${PROXY_SERVICES[currentProxyIndex]}`);
+                    
+                    if (currentProxyIndex === 0) {
+                        throw new Error('所有代理服务均失败，请稍后重试');
+                    }
+                    
+                    // 重试
+                    return fetchWithProxy(url);
+                } else {
+                    throw error;
                 }
-                
-                // 重试
-                return fetchWithProxy(url);
             }
         }
         
@@ -974,6 +1046,7 @@
             currentPage = 1;
             clearError();
             updateApiStatus('搜索中...');
+            addDebugInfo(`开始搜索: "${query}"`);
             
             // 显示加载状态
             resultsList.innerHTML = `
@@ -995,6 +1068,7 @@
                             };
                         } catch (error) {
                             console.error(`API ${api.url} 搜索失败:`, error);
+                            addDebugInfo(`API ${api.url} 搜索失败: ${error.message}`);
                             return { data: [], api };
                         }
                     })
@@ -1030,11 +1104,13 @@
                     `;
                     pagination.innerHTML = '';
                     updateApiStatus('无结果');
+                    addDebugInfo('未找到相关短剧');
                     return;
                 }
                 
                 displayResults();
                 updateApiStatus('正常');
+                addDebugInfo(`找到 ${currentSearchResults.length} 部相关短剧`);
             } catch (error) {
                 console.error('搜索失败:', error);
                 resultsList.innerHTML = `
@@ -1046,6 +1122,7 @@
                 pagination.innerHTML = '';
                 showError('搜索过程中发生错误：' + error.message);
                 updateApiStatus('错误');
+                addDebugInfo(`搜索失败: ${error.message}`);
             }
         }
         
@@ -1265,6 +1342,7 @@
                 loadingText.textContent = '正在加载剧集信息...';
                 clearError();
                 updateApiStatus('加载剧集中...');
+                addDebugInfo(`加载剧集: ${title} (ID: ${bookId})`);
                 
                 // 切换到播放页面
                 searchPage.style.display = 'none';
@@ -1276,11 +1354,13 @@
                 
                 // 获取剧集列表
                 const url = `${apiUrl}/?book_id=${bookId}`;
+                addDebugInfo(`请求剧集列表: ${url}`);
                 const data = await fetchWithProxy(url);
                 
                 if (data.data && data.data.video_list && data.data.video_list.length > 0) {
                     currentEpisodes = data.data.video_list;
                     displayEpisodes(data.data.video_list);
+                    addDebugInfo(`获取到 ${currentEpisodes.length} 个剧集`);
                     
                     // 自动播放第一集
                     playEpisode(0);
@@ -1289,12 +1369,14 @@
                     episodesList.innerHTML = '<div class="no-results">暂无可用剧集</div>';
                     showError('该短剧暂无可用剧集');
                     updateApiStatus('无剧集');
+                    addDebugInfo('未找到可用剧集');
                 }
             } catch (error) {
                 console.error('获取剧集失败:', error);
                 episodesList.innerHTML = '<div class="no-results">加载剧集失败</div>';
                 showError('加载剧集失败：' + error.message);
                 updateApiStatus('错误');
+                addDebugInfo(`加载剧集失败: ${error.message}`);
             }
         }
         
@@ -1332,10 +1414,12 @@
                 loadingText.textContent = '正在加载视频...';
                 clearError();
                 updateApiStatus('加载视频中...');
+                addDebugInfo(`播放第 ${index + 1} 集`);
                 
                 // 获取视频播放地址
                 const videoId = currentEpisodes[index].video_id;
                 const url = `${currentDrama.apiUrl}/?video_id=${videoId}`;
+                addDebugInfo(`请求视频地址: ${url}`);
                 const data = await fetchWithProxy(url);
                 
                 if (data.data && data.data.video && data.data.video.url) {
@@ -1344,11 +1428,13 @@
                     // 如果视频地址是HTTP，尝试替换为HTTPS
                     if (videoUrl.startsWith('http://')) {
                         videoUrl = videoUrl.replace('http://', 'https://');
+                        addDebugInfo(`HTTP替换为HTTPS: ${videoUrl}`);
                     }
                     
                     // 播放视频
                     playVideo(videoUrl);
                     updateApiStatus('正常');
+                    addDebugInfo(`开始播放: ${videoUrl}`);
                 } else {
                     throw new Error('无法获取视频播放地址');
                 }
@@ -1357,6 +1443,7 @@
                 showError('视频播放失败：' + error.message);
                 updateApiStatus('错误');
                 videoLoading.style.display = 'none';
+                addDebugInfo(`播放失败: ${error.message}`);
             }
         }
         
@@ -1377,6 +1464,7 @@
             if (currentPlayMode === 'proxy') {
                 finalUrl = PROXY_SERVICES[currentProxyIndex] + encodeURIComponent(url);
                 loadingText.textContent = '正在通过代理加载视频...';
+                addDebugInfo(`使用代理URL: ${finalUrl}`);
             }
             
             // 检查是否为HLS流
@@ -1389,6 +1477,8 @@
         
         // 播放HLS视频
         function playHlsVideo(url) {
+            addDebugInfo(`播放HLS视频: ${url}`);
+            
             if (Hls.isSupported()) {
                 hls = new Hls();
                 hls.loadSource(url);
@@ -1396,15 +1486,19 @@
                 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
                     videoLoading.style.display = 'none';
+                    addDebugInfo('HLS视频加载完成');
                     videoPlayer.play().catch(e => {
                         console.log('自动播放失败:', e);
                         videoPlayer.controls = true;
                         showError('自动播放被阻止，请手动点击播放按钮');
+                        addDebugInfo('自动播放被阻止');
                     });
                 });
                 
                 hls.on(Hls.Events.ERROR, (event, data) => {
                     console.error('HLS错误:', data);
+                    addDebugInfo(`HLS错误: ${data.type} - ${data.details}`);
+                    
                     if (data.fatal) {
                         switch(data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
@@ -1424,20 +1518,25 @@
                 videoPlayer.src = url;
                 videoPlayer.addEventListener('loadedmetadata', () => {
                     videoLoading.style.display = 'none';
+                    addDebugInfo('原生HLS视频加载完成');
                     videoPlayer.play().catch(e => {
                         console.log('自动播放失败:', e);
                         videoPlayer.controls = true;
                         showError('自动播放被阻止，请手动点击播放按钮');
+                        addDebugInfo('自动播放被阻止');
                     });
                 });
             } else {
                 showError('您的浏览器不支持HLS视频播放');
                 videoLoading.style.display = 'none';
+                addDebugInfo('浏览器不支持HLS');
             }
         }
         
         // 播放直接视频（MP4等）
         function playDirectVideo(url) {
+            addDebugInfo(`播放直接视频: ${url}`);
+            
             videoPlayer.src = url;
             videoPlayer.load();
             
@@ -1445,6 +1544,7 @@
                 videoPlayer.play().then(() => {
                     clearInterval(playAttempt);
                     videoLoading.style.display = 'none';
+                    addDebugInfo('视频播放成功');
                 }).catch(e => {
                     console.log('播放尝试失败:', e);
                 });
@@ -1456,16 +1556,19 @@
                     clearInterval(playAttempt);
                     showError('视频加载超时，请尝试其他播放模式');
                     videoLoading.style.display = 'none';
+                    addDebugInfo('视频加载超时');
                 }
             }, 10000);
             
             videoPlayer.addEventListener('loadeddata', () => {
                 clearInterval(playAttempt);
                 videoLoading.style.display = 'none';
+                addDebugInfo('视频数据加载完成');
                 videoPlayer.play().catch(e => {
                     console.log('自动播放失败:', e);
                     videoPlayer.controls = true;
                     showError('自动播放被阻止，请手动点击播放按钮');
+                    addDebugInfo('自动播放被阻止');
                 });
             });
             
@@ -1473,6 +1576,7 @@
                 clearInterval(playAttempt);
                 videoLoading.style.display = 'none';
                 showError('视频加载失败，请尝试其他剧集');
+                addDebugInfo('视频加载失败');
             });
         }
         
@@ -1496,6 +1600,7 @@
             clearError();
             videoLoading.style.display = 'flex';
             updateApiStatus('正常');
+            addDebugInfo('返回搜索页面');
         }
         
         // 事件监听
@@ -1522,6 +1627,7 @@
             console.error('视频播放错误:', e);
             showError('视频加载失败，请尝试其他剧集或刷新页面');
             videoLoading.style.display = 'none';
+            addDebugInfo(`视频错误: ${e.target.error.code}`);
         });
     </script>
 </body>
