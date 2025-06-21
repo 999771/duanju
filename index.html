@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>短剧搜索平台</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4a6bdf;
+            --secondary: #6c757d;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --border: #dee2e6;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --success: #28a745;
+            --danger: #dc3545;
+            --warning: #ffc107;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* 搜索页面样式 */
+        .search-page {
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            padding: 30px;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .logo:hover {
+            transform: scale(1.03);
+        }
+        
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(74, 107, 223, 0.3);
+        }
+        
+        h1 {
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+        
+        .search-container {
+            max-width: 700px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+        
+        #search-input {
+            width: 100%;
+            padding: 16px 25px;
+            font-size: 1.05rem;
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            background-color: #fafbff;
+        }
+        
+        #search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(74, 107, 223, 0.2);
+        }
+        
+        #search-button {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(74, 107, 223, 0.3);
+        }
+        
+        #search-button:hover {
+            transform: scale(1.05) rotate(5deg);
+            box-shadow: 0 6px 15px rgba(74, 107, 223, 0.4);
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .results-count {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .results-list {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background-color: white;
+        }
+        
+        .drama-item {
+            display: flex;
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            transition: all 0.2s ease;
+            animation: slideIn 0.4s ease-out;
+            animation-fill-mode: backwards;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .drama-item:hover {
+            background-color: rgba(74, 107, 223, 0.05);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .drama-cover {
+            width: 120px;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-right: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+        
+        .drama-item:hover .drama-cover {
+            transform: scale(1.03);
+        }
+        
+        .drama-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .drama-title {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+            color: var(--dark);
+            font-weight: 700;
+        }
+        
+        .drama-desc {
+            font-size: 0.95rem;
+            color: var(--secondary);
+            margin-bottom: 15px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.5;
+        }
+        
+        .drama-meta {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        
+        .drama-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .download-link {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, var(--success) 0%, #1e7e34 100%);
+            color: white;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+        }
+        
+        .download-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
+        }
+        
+        .view-btn {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
+            color: white;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(74, 107, 223, 0.3);
+        }
+        
+        .view-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(74, 107, 223, 0.4);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.1rem;
+            color: var(--secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(74, 107, 223, 0.2);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.1rem;
+            color: var(--secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .no-results i {
+            font-size: 3rem;
+            color: var(--secondary);
+            opacity: 0.5;
+        }
+        
+        /* 分页样式 */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            gap: 10px;
+        }
+        
+        .page-btn {
+            padding: 8px 16px;
+            background-color: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .page-btn:hover:not(.disabled) {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .page-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(74, 107, 223, 0.2);
+        }
+        
+        .page-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 播放页面样式 */
+        .player-page {
+            display: none;
+            padding: 0;
+            max-width: 1400px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+        
+        .player-header {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
+            padding: 15px 25px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .back-btn {
+            background-color: white;
+            color: var(--primary);
+            border: none;
+            border-radius: 50px;
+            padding: 10px 20px 10px 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+        }
+        
+        .back-btn:hover {
+            background-color: #f8f9fa;
+            transform: translateX(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .player-title {
+            color: white;
+            font-size: 1.2rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-grow: 1;
+            font-weight: 600;
+        }
+        
+        .video-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 25px;
+        }
+        
+        .video-container {
+            width: 100%;
+            background-color: #000;
+            position: relative;
+            padding-top: 56.25%; /* 16:9 宽高比 */
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+        
+        .episodes-container {
+            padding: 15px 25px 30px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .episodes-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--dark);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .episodes-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 12px;
+        }
+        
+        .episode-btn {
+            padding: 10px 15px;
+            background-color: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .episode-btn:hover {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(74, 107, 223, 0.2);
+        }
+        
+        .episode-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(74, 107, 223, 0.3);
+        }
+        
+        @media (max-width: 992px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .search-page {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .drama-item {
+                padding: 15px;
+            }
+            
+            .drama-cover {
+                width: 100px;
+                height: 140px;
+            }
+            
+            .episodes-list {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .drama-item {
+                flex-direction: column;
+            }
+            
+            .drama-cover {
+                width: 100%;
+                height: auto;
+                max-height: 200px;
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+            
+            .drama-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .drama-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            
+            .video-wrapper {
+                padding: 15px;
+            }
+            
+            .episodes-container {
+                padding: 15px;
+            }
+            
+            .back-btn {
+                padding: 8px 15px 8px 12px;
+                font-size: 0.9rem;
+            }
+            
+            .pagination {
+                flex-wrap: wrap;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+            
+            .drama-title {
+                font-size: 1.15rem;
+            }
+            
+            .drama-desc {
+                font-size: 0.9rem;
+            }
+            
+            .view-btn, .download-link {
+                padding: 7px 14px;
+                font-size: 0.85rem;
+            }
+            
+            .episodes-list {
+                grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+            }
+            
+            .page-btn {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 搜索页面 -->
+        <div class="search-page" id="search-page">
+            <header>
+                <div class="logo" id="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-film"></i>
+                    </div>
+                    <h1>短剧搜索平台</h1>
+                </div>
+                
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="输入短剧名称搜索...">
+                    <button id="search-button"><i class="fas fa-search"></i></button>
+                </div>
+            </header>
+            
+            <div class="results-header">
+                <div class="results-count" id="results-count">热门短剧推荐</div>
+            </div>
+            
+            <main>
+                <!-- 搜索结果列表 -->
+                <div class="results-list" id="results-list">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>正在加载短剧资源，请稍候...</div>
+                    </div>
+                </div>
+                
+                <!-- 分页控件 -->
+                <div class="pagination" id="pagination"></div>
+            </main>
+        </div>
+        
+        <!-- 播放页面 -->
+        <div class="player-page" id="player-page">
+            <div class="player-header">
+                <button class="back-btn" id="back-btn">
+                    <i class="fas fa-arrow-left"></i>
+                    返回搜索
+                </button>
+                <div class="player-title" id="player-title"></div>
+            </div>
+            
+            <div class="video-wrapper">
+                <div class="video-container">
+                    <video controls id="video-player" poster="https://via.placeholder.com/1200x675?text=加载中..."></video>
+                </div>
+            </div>
+            
+            <div class="episodes-container">
+                <h3 class="episodes-title"><i class="fas fa-list"></i> 剧集列表</h3>
+                <div class="episodes-list" id="episodes-list"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM元素
+        const searchPage = document.getElementById('search-page');
+        const playerPage = document.getElementById('player-page');
+        const searchInput = document.getElementById('search-input');
+        const searchButton = document.getElementById('search-button');
+        const resultsList = document.getElementById('results-list');
+        const resultsCount = document.getElementById('results-count');
+        const backBtn = document.getElementById('back-btn');
+        const playerTitle = document.getElementById('player-title');
+        const videoPlayer = document.getElementById('video-player');
+        const episodesList = document.getElementById('episodes-list');
+        const pagination = document.getElementById('pagination');
+        const logo = document.getElementById('logo');
+        
+        // 分页相关变量
+        let currentPage = 1;
+        const perPage = 8;
+        let totalPages = 1;
+        
+        // 当前状态
+        let currentDrama = null;
+        let currentEpisodes = [];
+        let currentSearchResults = [];
+        
+        // 初始API列表
+        const INITIAL_API_LIST = [
+            { 
+                url: 'https://api.xingzhige.com/API/playlet', 
+                name: '星之阁',
+                searchParam: 'keyword'
+            },
+            { 
+                url: 'https://ys.110t.cn/api', 
+                name: '云视短剧',
+                searchParam: 'keyword'
+            }
+        ];
+        
+        // 当前可用的API列表
+        let AVAILABLE_APIS = [...INITIAL_API_LIST];
+        
+        // 初始化
+        window.addEventListener('DOMContentLoaded', async () => {
+            // 加载热门短剧
+            searchDrama('热门');
+            
+            // 添加标题点击刷新功能
+            logo.addEventListener('click', () => {
+                searchInput.value = '';
+                searchDrama('热门');
+            });
+        });
+        
+        // 聚合搜索多个API
+        async function searchAllAPIs(query) {
+            if (!query.trim()) return [];
+            
+            const promises = AVAILABLE_APIS.map(api => {
+                const url = `${api.url}/?${api.searchParam}=${encodeURIComponent(query)}`;
+                
+                return fetch(url)
+                    .then(response => {
+                        if (!response.ok) throw new Error('API响应不正常');
+                        return response.json();
+                    })
+                    .then(data => ({
+                        data: data.data || [],
+                        api
+                    }))
+                    .catch(error => {
+                        console.error(`API ${api.url} 搜索失败:`, error);
+                        return { data: [], api };
+                    });
+            });
+            
+            const results = await Promise.all(promises);
+            return results;
+        }
+        
+        // 搜索短剧
+        async function searchDrama(query) {
+            if (!query.trim()) return;
+            
+            // 重置分页
+            currentPage = 1;
+            
+            // 显示加载状态
+            resultsList.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>正在搜索短剧资源，请稍候...</div>
+                </div>
+            `;
+            
+            try {
+                const apiResults = await searchAllAPIs(query);
+                
+                // 合并所有API的结果
+                let allResults = [];
+                apiResults.forEach(({data, api}) => {
+                    const optimized = optimizeSearchResults(data, query);
+                    // 标记来源
+                    const marked = optimized.map(item => ({
+                        ...item,
+                        source: api.name
+                    }));
+                    allResults = [...allResults, ...marked];
+                });
+                
+                // 去重并排序
+                const uniqueResults = removeDuplicates(allResults);
+                currentSearchResults = uniqueResults;
+                
+                // 更新结果计数
+                resultsCount.textContent = query === '热门' ? 
+                    '热门短剧推荐' : 
+                    `找到 ${currentSearchResults.length} 部相关短剧`;
+                
+                if (currentSearchResults.length === 0) {
+                    resultsList.innerHTML = `
+                        <div class="no-results">
+                            <i class="fas fa-search"></i>
+                            <div>未找到相关短剧，请尝试其他关键词</div>
+                        </div>
+                    `;
+                    pagination.innerHTML = '';
+                    return;
+                }
+                
+                displayResults();
+            } catch (error) {
+                console.error('搜索失败:', error);
+                resultsList.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div>搜索失败，请稍后重试</div>
+                    </div>
+                `;
+                pagination.innerHTML = '';
+            }
+        }
+        
+        // 去重函数
+        function removeDuplicates(results) {
+            const seen = new Set();
+            return results.filter(item => {
+                const key = `${item.title}_${item.desc}`;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    return true;
+                }
+                return false;
+            }).sort((a, b) => b.score - a.score);
+        }
+        
+        // 优化搜索结果
+        function optimizeSearchResults(results, query) {
+            const queryLower = query.toLowerCase();
+            
+            return results
+                .map(item => {
+                    // 计算匹配分数
+                    let score = 0;
+                    const title = item.title.toLowerCase();
+                    const desc = item.desc ? item.desc.toLowerCase() : '';
+                    
+                    // 标题匹配加分
+                    if (title.includes(queryLower)) {
+                        score += 100;
+                        // 完全匹配额外加分
+                        if (title === queryLower) score += 50;
+                        // 匹配位置越靠前加分越多
+                        const pos = title.indexOf(queryLower);
+                        score += (title.length - pos) / title.length * 30;
+                    }
+                    
+                    // 描述匹配加分
+                    if (desc.includes(queryLower)) {
+                        score += 30;
+                    }
+                    
+                    // 匹配词长度比例加分
+                    score += (queryLower.length / Math.max(title.length, 1)) * 20;
+                    
+                    // 热门推荐额外加分
+                    if (query === '热门') score += 40;
+                    
+                    return { ...item, score };
+                })
+                .filter(item => item.score > 40); // 过滤低分结果
+        }
+        
+        // 显示搜索结果（带分页）
+        function displayResults() {
+            if (!currentSearchResults || currentSearchResults.length === 0) {
+                resultsList.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <div>未找到相关短剧，请尝试其他关键词</div>
+                    </div>
+                `;
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            // 计算分页
+            const startIndex = (currentPage - 1) * perPage;
+            const endIndex = Math.min(startIndex + perPage, currentSearchResults.length);
+            const pageResults = currentSearchResults.slice(startIndex, endIndex);
+            totalPages = Math.ceil(currentSearchResults.length / perPage);
+            
+            // 渲染结果
+            resultsList.innerHTML = '';
+            
+            pageResults.forEach((drama, index) => {
+                const dramaItem = document.createElement('div');
+                dramaItem.className = 'drama-item';
+                dramaItem.style.animationDelay = `${index * 0.05}s`;
+                
+                // 检查是否有网盘链接
+                const hasDownloadLink = drama.desc && (drama.desc.includes('网盘') || drama.desc.includes('下载'));
+                const downloadLink = hasDownloadLink ? extractDownloadLink(drama.desc) : null;
+                
+                dramaItem.innerHTML = `
+                    <img src="${drama.cover}" alt="${drama.title}" class="drama-cover">
+                    <div class="drama-content">
+                        <div>
+                            <h3 class="drama-title">${drama.title}</h3>
+                            <p class="drama-desc">${drama.desc || '暂无描述'}</p>
+                        </div>
+                        <div class="drama-meta">
+                            <div class="drama-actions">
+                                ${downloadLink ? 
+                                    `<a href="${downloadLink}" class="download-link" target="_blank">
+                                        <i class="fas fa-download"></i> 网盘下载
+                                    </a>` : 
+                                    ''}
+                                <button class="view-btn" data-book-id="${drama.book_id}" data-title="${drama.title}" data-api="${drama.source}">
+                                    <i class="fas fa-play"></i> 播放剧集
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                resultsList.appendChild(dramaItem);
+            });
+            
+            // 为查看剧集按钮添加事件
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const bookId = btn.dataset.bookId;
+                    const title = btn.dataset.title;
+                    const source = btn.dataset.api;
+                    showPlayerPage(bookId, title, source);
+                });
+            });
+            
+            // 渲染分页控件
+            renderPagination();
+        }
+        
+        // 渲染分页控件
+        function renderPagination() {
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let paginationHTML = '';
+            
+            // 上一页按钮
+            paginationHTML += `
+                <button class="page-btn prev-btn ${currentPage === 1 ? 'disabled' : ''}">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `;
+            
+            // 页码按钮
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage < maxVisiblePages - 1) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <button class="page-btn ${i === currentPage ? 'active' : ''}">${i}</button>
+                `;
+            }
+            
+            // 下一页按钮
+            paginationHTML += `
+                <button class="page-btn next-btn ${currentPage === totalPages ? 'disabled' : ''}">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+            
+            pagination.innerHTML = paginationHTML;
+            
+            // 添加事件监听
+            document.querySelectorAll('.page-btn:not(.prev-btn):not(.next-btn)').forEach(btn => {
+                if (!btn.classList.contains('disabled')) {
+                    btn.addEventListener('click', () => {
+                        currentPage = parseInt(btn.textContent);
+                        displayResults();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                }
+            });
+            
+            document.querySelector('.prev-btn').addEventListener('click', () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    displayResults();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+            
+            document.querySelector('.next-btn').addEventListener('click', () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    displayResults();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        }
+        
+        // 根据来源找到API
+        function findApiBySource(source) {
+            const api = AVAILABLE_APIS.find(a => a.name === source);
+            return api ? api.url : AVAILABLE_APIS[0].url;
+        }
+        
+        // 从描述中提取网盘链接
+        function extractDownloadLink(desc) {
+            const urlRegex = /(https?:\/\/[^\s]+)/;
+            const match = desc.match(urlRegex);
+            return match ? match[0] : '#';
+        }
+        
+        // 显示播放页面
+        async function showPlayerPage(bookId, title, source) {
+            try {
+                // 显示加载状态
+                playerTitle.textContent = '加载中...';
+                episodesList.innerHTML = '';
+                videoPlayer.innerHTML = '';
+                videoPlayer.poster = 'https://via.placeholder.com/1200x675?text=加载中...';
+                
+                // 切换到播放页面
+                searchPage.style.display = 'none';
+                playerPage.style.display = 'block';
+                playerTitle.textContent = title;
+                
+                const apiUrl = findApiBySource(source);
+                currentDrama = { bookId, title, apiUrl };
+                
+                // 获取剧集列表
+                const url = `${apiUrl}/?book_id=${bookId}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.data && data.data.video_list && data.data.video_list.length > 0) {
+                    currentEpisodes = data.data.video_list;
+                    displayEpisodes(data.data.video_list);
+                    
+                    // 自动播放第一集
+                    playEpisode(0);
+                } else {
+                    episodesList.innerHTML = '<div class="no-results">暂无可用剧集</div>';
+                }
+            } catch (error) {
+                console.error('获取剧集失败:', error);
+                episodesList.innerHTML = '<div class="no-results">加载剧集失败</div>';
+            }
+        }
+        
+        // 显示剧集列表
+        function displayEpisodes(episodes) {
+            episodesList.innerHTML = '';
+            
+            episodes.forEach((episode, index) => {
+                const episodeBtn = document.createElement('div');
+                episodeBtn.className = 'episode-btn';
+                episodeBtn.textContent = `第${index + 1}集`;
+                episodeBtn.dataset.index = index;
+                
+                episodeBtn.addEventListener('click', () => {
+                    playEpisode(index);
+                });
+                
+                episodesList.appendChild(episodeBtn);
+            });
+        }
+        
+        // 播放指定剧集
+        async function playEpisode(index) {
+            if (!currentEpisodes || !currentEpisodes[index] || !currentDrama) return;
+            
+            try {
+                // 更新活跃状态
+                document.querySelectorAll('.episode-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector(`.episode-btn[data-index="${index}"]`).classList.add('active');
+                
+                // 显示加载状态
+                videoPlayer.poster = 'https://via.placeholder.com/1200x675?text=加载中...';
+                
+                // 获取视频播放地址
+                const videoId = currentEpisodes[index].video_id;
+                const url = `${currentDrama.apiUrl}/?video_id=${videoId}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.data && data.data.video && data.data.video.url) {
+                    videoPlayer.src = data.data.video.url;
+                    videoPlayer.load();
+                    
+                    // 尝试自动播放
+                    videoPlayer.play().catch(e => {
+                        console.log('自动播放失败:', e);
+                        videoPlayer.controls = true;
+                    });
+                } else {
+                    alert('无法获取视频播放地址');
+                }
+            } catch (error) {
+                console.error('播放失败:', error);
+                alert('视频播放失败');
+            }
+        }
+        
+        // 返回搜索页面
+        function backToSearch() {
+            playerPage.style.display = 'none';
+            searchPage.style.display = 'block';
+            videoPlayer.pause();
+            currentDrama = null;
+            currentEpisodes = [];
+        }
+        
+        // 事件监听
+        searchButton.addEventListener('click', () => {
+            const query = searchInput.value.trim();
+            if (query) {
+                searchDrama(query);
+            }
+        });
+        
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const query = searchInput.value.trim();
+                if (query) {
+                    searchDrama(query);
+                }
+            }
+        });
+        
+        backBtn.addEventListener('click', backToSearch);
+    </script>
+</body>
+</html>
