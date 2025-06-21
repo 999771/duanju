@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>短剧搜索平台 - Cloudflare优化版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.3/dist/hls.min.js"></script>
     <style>
         :root {
             --primary: #4a6bdf;
@@ -604,28 +603,6 @@
             border-radius: 20px;
         }
         
-        .player-mode {
-            display: flex;
-            justify-content: center;
-            margin-top: 15px;
-            gap: 10px;
-        }
-        
-        .mode-btn {
-            padding: 8px 15px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border: 1px solid var(--primary);
-            border-radius: 30px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .mode-btn.active {
-            background-color: var(--primary);
-            color: white;
-        }
-        
         .debug-panel {
             background-color: #f8f9fa;
             border-radius: 8px;
@@ -827,21 +804,16 @@
                 <h3 class="episodes-title"><i class="fas fa-list"></i> 剧集列表</h3>
                 <div class="episodes-list" id="episodes-list"></div>
                 
-                <div class="player-mode">
-                    <button class="mode-btn active" data-mode="direct">直接播放</button>
-                    <button class="mode-btn" data-mode="proxy">代理播放</button>
-                </div>
-                
                 <div class="proxy-info">
                     <i class="fas fa-info-circle"></i>
-                    <span id="proxy-info-text">当前使用直接播放模式，如遇问题请尝试代理模式</span>
+                    <span id="proxy-info-text">已启用Cloudflare优化模式</span>
                 </div>
                 
                 <div class="debug-panel">
                     <div class="debug-title">
                         <i class="fas fa-bug"></i> 调试信息
                     </div>
-                    <div class="debug-content" id="debug-output">等待播放信息...</div>
+                    <div class="debug-content" id="debug-output">系统初始化完成，等待搜索操作...</div>
                 </div>
                 
                 <div class="tech-info">
@@ -849,10 +821,10 @@
                         <i class="fas fa-bolt"></i> Cloudflare优化
                     </div>
                     <div class="tech-item">
-                        <i class="fas fa-globe"></i> 前端代理技术
+                        <i class="fas fa-globe"></i> 跨域解决方案
                     </div>
                     <div class="tech-item">
-                        <i class="fas fa-video"></i> 智能格式检测
+                        <i class="fas fa-cloud"></i> 高可用API
                     </div>
                 </div>
             </div>
@@ -878,7 +850,6 @@
         const loadingText = document.getElementById('loading-text');
         const currentApiIndicator = document.getElementById('current-api');
         const proxyInfoText = document.getElementById('proxy-info-text');
-        const modeButtons = document.querySelectorAll('.mode-btn');
         const debugOutput = document.getElementById('debug-output');
         
         // 分页相关变量
@@ -890,9 +861,6 @@
         let currentDrama = null;
         let currentEpisodes = [];
         let currentSearchResults = [];
-        let hls = null;
-        let currentPlayMode = 'direct'; // 'direct' 或 'proxy'
-        let currentProxyUrl = '';
         
         // 初始API列表
         const INITIAL_API_LIST = [
@@ -913,7 +881,8 @@
             'https://api.allorigins.win/raw?url=',
             'https://corsproxy.io/?',
             'https://api.codetabs.com/v1/proxy?quest=',
-            'https://thingproxy.freeboard.io/fetch/'
+            'https://thingproxy.freeboard.io/fetch/',
+            'https://proxy.cors.sh/'
         ];
         
         // 当前使用的代理索引
@@ -960,50 +929,23 @@
                 searchDrama('热门');
             });
             
-            // 播放模式切换
-            modeButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    modeButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentPlayMode = btn.dataset.mode;
-                    
-                    if (currentPlayMode === 'direct') {
-                        proxyInfoText.textContent = '当前使用直接播放模式，如遇问题请尝试代理模式';
-                    } else {
-                        proxyInfoText.textContent = '当前使用代理播放模式，加载可能需要10-20秒';
-                    }
-                    
-                    addDebugInfo(`切换到播放模式: ${currentPlayMode}`);
-                    
-                    // 重新播放当前剧集
-                    const activeEpisode = document.querySelector('.episode-btn.active');
-                    if (activeEpisode) {
-                        const index = parseInt(activeEpisode.dataset.index);
-                        playEpisode(index);
-                    }
-                });
-            });
-            
             // 初始化调试信息
             addDebugInfo('系统初始化完成');
-            addDebugInfo('本地代理技术已启用');
             addDebugInfo('Cloudflare优化模式激活');
+            proxyInfoText.textContent = '已启用Cloudflare优化模式';
         });
         
-        // 使用代理获取数据
+        // 使用代理获取数据（Cloudflare优化版）
         async function fetchWithProxy(url) {
             addDebugInfo(`开始请求: ${url}`);
             
             try {
-                let finalUrl = url;
+                // 使用轮询代理服务
+                const proxyService = PROXY_SERVICES[currentProxyIndex];
+                const proxyUrl = proxyService + encodeURIComponent(url);
+                addDebugInfo(`使用代理: ${proxyService}`);
                 
-                if (currentPlayMode === 'proxy') {
-                    const proxyService = PROXY_SERVICES[currentProxyIndex];
-                    finalUrl = proxyService + encodeURIComponent(url);
-                    addDebugInfo(`使用代理: ${proxyService}`);
-                }
-                
-                const response = await fetch(finalUrl, {
+                const response = await fetch(proxyUrl, {
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
@@ -1021,24 +963,20 @@
                 console.error('请求失败:', error);
                 addDebugInfo(`请求失败: ${error.message}`);
                 
-                if (currentPlayMode === 'proxy') {
-                    // 切换到下一个代理
-                    currentProxyIndex = (currentProxyIndex + 1) % PROXY_SERVICES.length;
-                    addDebugInfo(`切换到代理: ${PROXY_SERVICES[currentProxyIndex]}`);
-                    
-                    if (currentProxyIndex === 0) {
-                        throw new Error('所有代理服务均失败，请稍后重试');
-                    }
-                    
-                    // 重试
-                    return fetchWithProxy(url);
-                } else {
-                    throw error;
+                // 切换到下一个代理
+                currentProxyIndex = (currentProxyIndex + 1) % PROXY_SERVICES.length;
+                addDebugInfo(`切换到代理: ${PROXY_SERVICES[currentProxyIndex]}`);
+                
+                if (currentProxyIndex === 0) {
+                    throw new Error('所有代理服务均失败，请稍后重试');
                 }
+                
+                // 重试
+                return fetchWithProxy(url);
             }
         }
         
-        // 搜索短剧
+        // 搜索短剧（Cloudflare优化版）
         async function searchDrama(query) {
             if (!query.trim()) return;
             
@@ -1447,96 +1385,8 @@
             }
         }
         
-        // 播放视频（支持HLS和直接播放）
+        // 播放视频
         function playVideo(url) {
-            // 清除之前的HLS实例
-            if (hls) {
-                hls.destroy();
-                hls = null;
-            }
-            
-            // 重置视频播放器
-            videoPlayer.src = '';
-            videoPlayer.load();
-            
-            // 根据播放模式处理URL
-            let finalUrl = url;
-            if (currentPlayMode === 'proxy') {
-                finalUrl = PROXY_SERVICES[currentProxyIndex] + encodeURIComponent(url);
-                loadingText.textContent = '正在通过代理加载视频...';
-                addDebugInfo(`使用代理URL: ${finalUrl}`);
-            }
-            
-            // 检查是否为HLS流
-            if (finalUrl.includes('.m3u8') || finalUrl.includes('.ts')) {
-                playHlsVideo(finalUrl);
-            } else {
-                playDirectVideo(finalUrl);
-            }
-        }
-        
-        // 播放HLS视频
-        function playHlsVideo(url) {
-            addDebugInfo(`播放HLS视频: ${url}`);
-            
-            if (Hls.isSupported()) {
-                hls = new Hls();
-                hls.loadSource(url);
-                hls.attachMedia(videoPlayer);
-                
-                hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    videoLoading.style.display = 'none';
-                    addDebugInfo('HLS视频加载完成');
-                    videoPlayer.play().catch(e => {
-                        console.log('自动播放失败:', e);
-                        videoPlayer.controls = true;
-                        showError('自动播放被阻止，请手动点击播放按钮');
-                        addDebugInfo('自动播放被阻止');
-                    });
-                });
-                
-                hls.on(Hls.Events.ERROR, (event, data) => {
-                    console.error('HLS错误:', data);
-                    addDebugInfo(`HLS错误: ${data.type} - ${data.details}`);
-                    
-                    if (data.fatal) {
-                        switch(data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                showError('网络错误，请重试');
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                showError('视频格式错误');
-                                break;
-                            default:
-                                showError('视频播放失败');
-                        }
-                        videoLoading.style.display = 'none';
-                    }
-                });
-            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-                // 原生HLS支持（Safari）
-                videoPlayer.src = url;
-                videoPlayer.addEventListener('loadedmetadata', () => {
-                    videoLoading.style.display = 'none';
-                    addDebugInfo('原生HLS视频加载完成');
-                    videoPlayer.play().catch(e => {
-                        console.log('自动播放失败:', e);
-                        videoPlayer.controls = true;
-                        showError('自动播放被阻止，请手动点击播放按钮');
-                        addDebugInfo('自动播放被阻止');
-                    });
-                });
-            } else {
-                showError('您的浏览器不支持HLS视频播放');
-                videoLoading.style.display = 'none';
-                addDebugInfo('浏览器不支持HLS');
-            }
-        }
-        
-        // 播放直接视频（MP4等）
-        function playDirectVideo(url) {
-            addDebugInfo(`播放直接视频: ${url}`);
-            
             videoPlayer.src = url;
             videoPlayer.load();
             
@@ -1554,7 +1404,7 @@
             setTimeout(() => {
                 if (videoPlayer.readyState < 3) {
                     clearInterval(playAttempt);
-                    showError('视频加载超时，请尝试其他播放模式');
+                    showError('视频加载超时，请尝试刷新页面');
                     videoLoading.style.display = 'none';
                     addDebugInfo('视频加载超时');
                 }
@@ -1584,11 +1434,6 @@
         function backToSearch() {
             playerPage.style.display = 'none';
             searchPage.style.display = 'block';
-            
-            if (hls) {
-                hls.destroy();
-                hls = null;
-            }
             
             if (videoPlayer) {
                 videoPlayer.pause();
