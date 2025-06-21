@@ -46,15 +46,14 @@
         
         /* 搜索页面样式 */
         .search-page {
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: rgba(255, 255, 255, 0.97);
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
             padding: 30px;
             margin-top: 20px;
             animation: fadeIn 0.5s ease-out;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.7);
         }
         
         @keyframes fadeIn {
@@ -130,8 +129,7 @@
             outline: none;
             transition: all 0.3s ease;
             box-shadow: var(--shadow);
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(5px);
+            background-color: rgba(255, 255, 255, 0.85);
         }
         
         #search-input:focus {
@@ -420,12 +418,11 @@
             padding: 0;
             max-width: 1400px;
             margin: 20px auto;
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: rgba(255, 255, 255, 0.97);
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
-            backdrop-filter: blur(5px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.7);
         }
         
         .player-header {
@@ -505,7 +502,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            background-color: rgba(0, 0, 0, 0.8);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -605,6 +602,28 @@
             color: var(--info);
             padding: 5px 10px;
             border-radius: 20px;
+        }
+        
+        .player-mode {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        
+        .mode-btn {
+            padding: 8px 15px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--primary);
+            border-radius: 30px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            background-color: var(--primary);
+            color: white;
         }
         
         @media (max-width: 992px) {
@@ -768,25 +787,31 @@
                 <div class="video-container">
                     <div class="video-loading" id="video-loading">
                         <div class="video-loading-spinner"></div>
-                        <div>正在加载视频，请稍候...</div>
+                        <div id="loading-text">正在加载视频，请稍候...</div>
                     </div>
-                    <video controls id="video-player" poster="https://via.placeholder.com/1200x675?text=加载中..." crossorigin="anonymous"></video>
+                    <video controls id="video-player" poster="https://via.placeholder.com/1200x675?text=加载中..." crossorigin="anonymous" referrerpolicy="no-referrer"></video>
                 </div>
             </div>
             
             <div class="episodes-container">
                 <h3 class="episodes-title"><i class="fas fa-list"></i> 剧集列表</h3>
                 <div class="episodes-list" id="episodes-list"></div>
+                
+                <div class="player-mode">
+                    <button class="mode-btn active" data-mode="direct">直接播放</button>
+                    <button class="mode-btn" data-mode="proxy">代理播放</button>
+                </div>
+                
                 <div class="proxy-info">
                     <i class="fas fa-info-circle"></i>
-                    提示：已启用跨域代理技术解决Cloudflare部署问题，视频加载可能需要10-20秒
+                    <span id="proxy-info-text">当前使用直接播放模式，如遇问题请尝试代理模式</span>
                 </div>
                 <div class="tech-info">
                     <div class="tech-item">
-                        <i class="fas fa-bolt"></i> HLS流媒体支持
+                        <i class="fas fa-bolt"></i> 双轨播放系统
                     </div>
                     <div class="tech-item">
-                        <i class="fas fa-globe"></i> 跨域代理技术
+                        <i class="fas fa-globe"></i> 智能格式检测
                     </div>
                     <div class="tech-item">
                         <i class="fas fa-cloud"></i> Cloudflare优化
@@ -812,7 +837,10 @@
         const logo = document.getElementById('logo');
         const errorContainer = document.getElementById('error-container');
         const videoLoading = document.getElementById('video-loading');
+        const loadingText = document.getElementById('loading-text');
         const currentApiIndicator = document.getElementById('current-api');
+        const proxyInfoText = document.getElementById('proxy-info-text');
+        const modeButtons = document.querySelectorAll('.mode-btn');
         
         // 分页相关变量
         let currentPage = 1;
@@ -824,6 +852,7 @@
         let currentEpisodes = [];
         let currentSearchResults = [];
         let hls = null;
+        let currentPlayMode = 'direct'; // 'direct' 或 'proxy'
         
         // 初始API列表
         const INITIAL_API_LIST = [
@@ -880,6 +909,28 @@
             logo.addEventListener('click', () => {
                 searchInput.value = '';
                 searchDrama('热门');
+            });
+            
+            // 播放模式切换
+            modeButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    modeButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentPlayMode = btn.dataset.mode;
+                    
+                    if (currentPlayMode === 'direct') {
+                        proxyInfoText.textContent = '当前使用直接播放模式，如遇问题请尝试代理模式';
+                    } else {
+                        proxyInfoText.textContent = '当前使用代理播放模式，加载可能需要10-20秒';
+                    }
+                    
+                    // 重新播放当前剧集
+                    const activeEpisode = document.querySelector('.episode-btn.active');
+                    if (activeEpisode) {
+                        const index = parseInt(activeEpisode.dataset.index);
+                        playEpisode(index);
+                    }
+                });
             });
         });
         
@@ -1211,6 +1262,7 @@
                 videoPlayer.innerHTML = '';
                 videoPlayer.poster = 'https://via.placeholder.com/1200x675?text=加载中...';
                 videoLoading.style.display = 'flex';
+                loadingText.textContent = '正在加载剧集信息...';
                 clearError();
                 updateApiStatus('加载剧集中...');
                 
@@ -1277,6 +1329,7 @@
                 
                 // 显示加载状态
                 videoLoading.style.display = 'flex';
+                loadingText.textContent = '正在加载视频...';
                 clearError();
                 updateApiStatus('加载视频中...');
                 
@@ -1286,18 +1339,11 @@
                 const data = await fetchWithProxy(url);
                 
                 if (data.data && data.data.video && data.data.video.url) {
-                    // 解决Cloudflare混合内容问题
                     let videoUrl = data.data.video.url;
                     
                     // 如果视频地址是HTTP，尝试替换为HTTPS
                     if (videoUrl.startsWith('http://')) {
                         videoUrl = videoUrl.replace('http://', 'https://');
-                    }
-                    
-                    // 清除之前的HLS实例
-                    if (hls) {
-                        hls.destroy();
-                        hls = null;
                     }
                     
                     // 播放视频
@@ -1314,10 +1360,36 @@
             }
         }
         
-        // 播放视频（支持HLS）
+        // 播放视频（支持HLS和直接播放）
         function playVideo(url) {
+            // 清除之前的HLS实例
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            
+            // 重置视频播放器
+            videoPlayer.src = '';
+            videoPlayer.load();
+            
+            // 根据播放模式处理URL
+            let finalUrl = url;
+            if (currentPlayMode === 'proxy') {
+                finalUrl = PROXY_SERVICES[currentProxyIndex] + encodeURIComponent(url);
+                loadingText.textContent = '正在通过代理加载视频...';
+            }
+            
+            // 检查是否为HLS流
+            if (finalUrl.includes('.m3u8') || finalUrl.includes('.ts')) {
+                playHlsVideo(finalUrl);
+            } else {
+                playDirectVideo(finalUrl);
+            }
+        }
+        
+        // 播放HLS视频
+        function playHlsVideo(url) {
             if (Hls.isSupported()) {
-                // 创建HLS实例
                 hls = new Hls();
                 hls.loadSource(url);
                 hls.attachMedia(videoPlayer);
@@ -1359,20 +1431,46 @@
                     });
                 });
             } else {
-                // 标准MP4视频
-                videoPlayer.src = url;
-                videoPlayer.addEventListener('loadeddata', () => {
-                    videoLoading.style.display = 'none';
-                    videoPlayer.play().catch(e => {
-                        console.log('自动播放失败:', e);
-                        videoPlayer.controls = true;
-                        showError('自动播放被阻止，请手动点击播放按钮');
-                    });
-                });
+                showError('您的浏览器不支持HLS视频播放');
+                videoLoading.style.display = 'none';
             }
+        }
+        
+        // 播放直接视频（MP4等）
+        function playDirectVideo(url) {
+            videoPlayer.src = url;
+            videoPlayer.load();
             
-            // 添加错误监听
+            const playAttempt = setInterval(() => {
+                videoPlayer.play().then(() => {
+                    clearInterval(playAttempt);
+                    videoLoading.style.display = 'none';
+                }).catch(e => {
+                    console.log('播放尝试失败:', e);
+                });
+            }, 500);
+            
+            // 设置超时
+            setTimeout(() => {
+                if (videoPlayer.readyState < 3) {
+                    clearInterval(playAttempt);
+                    showError('视频加载超时，请尝试其他播放模式');
+                    videoLoading.style.display = 'none';
+                }
+            }, 10000);
+            
+            videoPlayer.addEventListener('loadeddata', () => {
+                clearInterval(playAttempt);
+                videoLoading.style.display = 'none';
+                videoPlayer.play().catch(e => {
+                    console.log('自动播放失败:', e);
+                    videoPlayer.controls = true;
+                    showError('自动播放被阻止，请手动点击播放按钮');
+                });
+            });
+            
             videoPlayer.addEventListener('error', () => {
+                clearInterval(playAttempt);
                 videoLoading.style.display = 'none';
                 showError('视频加载失败，请尝试其他剧集');
             });
