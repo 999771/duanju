@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>短剧搜索平台</title>
+    <title>短剧搜索平台 - Cloudflare修复版</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.3/dist/hls.min.js"></script>
     <style>
         :root {
             --primary: #4a6bdf;
@@ -16,6 +17,7 @@
             --success: #28a745;
             --danger: #dc3545;
             --warning: #ffc107;
+            --info: #17a2b8;
         }
         
         * {
@@ -32,6 +34,8 @@
             padding: 0;
             margin: 0;
             min-height: 100vh;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%234a6bdf" opacity="0.03"/><path d="M20,20 Q40,5 60,20 T100,20 L100,80 Q80,95 60,80 T20,80 Z" fill="%234a6bdf" opacity="0.05"/></svg>');
+            background-size: 300px;
         }
         
         .container {
@@ -42,13 +46,15 @@
         
         /* 搜索页面样式 */
         .search-page {
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
             padding: 30px;
             margin-top: 20px;
             animation: fadeIn 0.5s ease-out;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
         
         @keyframes fadeIn {
@@ -98,6 +104,15 @@
             background-clip: text;
             color: transparent;
             font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .tagline {
+            color: var(--secondary);
+            font-size: 1rem;
+            margin-top: -5px;
+            margin-bottom: 20px;
+            opacity: 0.8;
         }
         
         .search-container {
@@ -115,7 +130,8 @@
             outline: none;
             transition: all 0.3s ease;
             box-shadow: var(--shadow);
-            background-color: #fafbff;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
         }
         
         #search-input:focus {
@@ -162,6 +178,17 @@
             color: var(--dark);
         }
         
+        .api-indicator {
+            font-size: 0.85rem;
+            background-color: rgba(74, 107, 223, 0.1);
+            color: var(--primary);
+            padding: 5px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
         .results-list {
             border-radius: 12px;
             overflow: hidden;
@@ -198,6 +225,7 @@
             flex-shrink: 0;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             transition: transform 0.3s;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
         }
         
         .drama-item:hover .drama-cover {
@@ -216,6 +244,17 @@
             margin-bottom: 8px;
             color: var(--dark);
             font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .drama-source {
+            font-size: 0.8rem;
+            background-color: rgba(74, 107, 223, 0.1);
+            color: var(--primary);
+            padding: 3px 8px;
+            border-radius: 4px;
         }
         
         .drama-desc {
@@ -381,10 +420,12 @@
             padding: 0;
             max-width: 1400px;
             margin: 20px auto;
-            background-color: white;
+            background-color: rgba(255, 255, 255, 0.95);
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
             overflow: hidden;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
         
         .player-header {
@@ -458,6 +499,31 @@
             outline: none;
         }
         
+        .video-loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 10;
+        }
+        
+        .video-loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+        
         .episodes-container {
             padding: 15px 25px 30px;
             max-width: 1200px;
@@ -509,13 +575,36 @@
         }
         
         .proxy-info {
-            padding: 10px;
+            padding: 12px;
             background-color: #e3f2fd;
             border-radius: 8px;
             font-size: 0.85rem;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 15px;
             color: #1976d2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .tech-info {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tech-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.85rem;
+            background-color: rgba(23, 162, 184, 0.1);
+            color: var(--info);
+            padding: 5px 10px;
+            border-radius: 20px;
         }
         
         @media (max-width: 992px) {
@@ -612,6 +701,12 @@
                 padding: 6px 12px;
                 font-size: 0.9rem;
             }
+            
+            .tech-info {
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
         }
     </style>
 </head>
@@ -626,6 +721,7 @@
                     </div>
                     <h1>短剧搜索平台</h1>
                 </div>
+                <p class="tagline">海量短剧资源，一站式搜索与播放体验</p>
                 
                 <div class="search-container">
                     <input type="text" id="search-input" placeholder="输入短剧名称搜索...">
@@ -635,6 +731,10 @@
             
             <div class="results-header">
                 <div class="results-count" id="results-count">热门短剧推荐</div>
+                <div class="api-indicator">
+                    <i class="fas fa-plug"></i>
+                    <span id="current-api">服务状态: 正常</span>
+                </div>
             </div>
             
             <main>
@@ -666,6 +766,10 @@
             
             <div class="video-wrapper">
                 <div class="video-container">
+                    <div class="video-loading" id="video-loading">
+                        <div class="video-loading-spinner"></div>
+                        <div>正在加载视频，请稍候...</div>
+                    </div>
                     <video controls id="video-player" poster="https://via.placeholder.com/1200x675?text=加载中..." crossorigin="anonymous"></video>
                 </div>
             </div>
@@ -674,7 +778,19 @@
                 <h3 class="episodes-title"><i class="fas fa-list"></i> 剧集列表</h3>
                 <div class="episodes-list" id="episodes-list"></div>
                 <div class="proxy-info">
-                    提示：由于平台限制，部分视频可能需要通过代理访问。我们已自动处理跨域问题。
+                    <i class="fas fa-info-circle"></i>
+                    提示：已启用跨域代理技术解决Cloudflare部署问题，视频加载可能需要10-20秒
+                </div>
+                <div class="tech-info">
+                    <div class="tech-item">
+                        <i class="fas fa-bolt"></i> HLS流媒体支持
+                    </div>
+                    <div class="tech-item">
+                        <i class="fas fa-globe"></i> 跨域代理技术
+                    </div>
+                    <div class="tech-item">
+                        <i class="fas fa-cloud"></i> Cloudflare优化
+                    </div>
                 </div>
             </div>
         </div>
@@ -695,6 +811,8 @@
         const pagination = document.getElementById('pagination');
         const logo = document.getElementById('logo');
         const errorContainer = document.getElementById('error-container');
+        const videoLoading = document.getElementById('video-loading');
+        const currentApiIndicator = document.getElementById('current-api');
         
         // 分页相关变量
         let currentPage = 1;
@@ -705,6 +823,7 @@
         let currentDrama = null;
         let currentEpisodes = [];
         let currentSearchResults = [];
+        let hls = null;
         
         // 初始API列表
         const INITIAL_API_LIST = [
@@ -720,8 +839,16 @@
             }
         ];
         
-        // 当前可用的API列表
-        let AVAILABLE_APIS = [...INITIAL_API_LIST];
+        // 代理服务列表（解决跨域问题）
+        const PROXY_SERVICES = [
+            'https://api.allorigins.win/raw?url=',
+            'https://corsproxy.io/?',
+            'https://api.codetabs.com/v1/proxy?quest=',
+            'https://thingproxy.freeboard.io/fetch/'
+        ];
+        
+        // 当前使用的代理索引
+        let currentProxyIndex = 0;
         
         // 显示错误消息
         function showError(message) {
@@ -738,10 +865,16 @@
             errorContainer.innerHTML = '';
         }
         
+        // 更新API状态指示器
+        function updateApiStatus(status) {
+            currentApiIndicator.textContent = `服务状态: ${status}`;
+        }
+        
         // 初始化
         window.addEventListener('DOMContentLoaded', async () => {
             // 加载热门短剧
             searchDrama('热门');
+            updateApiStatus('正常');
             
             // 添加标题点击刷新功能
             logo.addEventListener('click', () => {
@@ -750,10 +883,9 @@
             });
         });
         
-        // 使用代理解决跨域问题
+        // 使用代理获取数据
         async function fetchWithProxy(url) {
-            // 使用公共CORS代理
-            const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+            const proxyUrl = PROXY_SERVICES[currentProxyIndex] + encodeURIComponent(url);
             
             try {
                 const response = await fetch(proxyUrl, {
@@ -763,30 +895,23 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`请求失败: ${response.status}`);
+                    throw new Error(`代理请求失败: ${response.status}`);
                 }
                 
                 return response.json();
             } catch (error) {
-                console.error('代理请求失败:', error);
-                // 尝试直接请求作为备用方案
-                try {
-                    const response = await fetch(url, {
-                        mode: 'cors',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`直接请求失败: ${response.status}`);
-                    }
-                    
-                    return response.json();
-                } catch (directError) {
-                    console.error('直接请求失败:', directError);
-                    throw new Error('无法获取数据，请稍后重试');
+                console.error(`代理 ${PROXY_SERVICES[currentProxyIndex]} 失败:`, error);
+                
+                // 切换到下一个代理
+                currentProxyIndex = (currentProxyIndex + 1) % PROXY_SERVICES.length;
+                console.log(`切换到代理: ${PROXY_SERVICES[currentProxyIndex]}`);
+                
+                if (currentProxyIndex === 0) {
+                    throw new Error('所有代理服务均失败，请稍后重试');
                 }
+                
+                // 重试
+                return fetchWithProxy(url);
             }
         }
         
@@ -797,6 +922,7 @@
             // 重置分页
             currentPage = 1;
             clearError();
+            updateApiStatus('搜索中...');
             
             // 显示加载状态
             resultsList.innerHTML = `
@@ -808,7 +934,7 @@
             
             try {
                 const apiResults = await Promise.all(
-                    AVAILABLE_APIS.map(async (api) => {
+                    INITIAL_API_LIST.map(async (api) => {
                         const url = `${api.url}/?${api.searchParam}=${encodeURIComponent(query)}`;
                         try {
                             const data = await fetchWithProxy(url);
@@ -852,10 +978,12 @@
                         </div>
                     `;
                     pagination.innerHTML = '';
+                    updateApiStatus('无结果');
                     return;
                 }
                 
                 displayResults();
+                updateApiStatus('正常');
             } catch (error) {
                 console.error('搜索失败:', error);
                 resultsList.innerHTML = `
@@ -866,6 +994,7 @@
                 `;
                 pagination.innerHTML = '';
                 showError('搜索过程中发生错误：' + error.message);
+                updateApiStatus('错误');
             }
         }
         
@@ -954,7 +1083,10 @@
                     <img src="${drama.cover}" alt="${drama.title}" class="drama-cover" crossorigin="anonymous">
                     <div class="drama-content">
                         <div>
-                            <h3 class="drama-title">${drama.title}</h3>
+                            <h3 class="drama-title">
+                                ${drama.title}
+                                <span class="drama-source">${drama.source}</span>
+                            </h3>
                             <p class="drama-desc">${drama.desc || '暂无描述'}</p>
                         </div>
                         <div class="drama-meta">
@@ -1059,8 +1191,8 @@
         
         // 根据来源找到API
         function findApiBySource(source) {
-            const api = AVAILABLE_APIS.find(a => a.name === source);
-            return api ? api.url : AVAILABLE_APIS[0].url;
+            const api = INITIAL_API_LIST.find(a => a.name === source);
+            return api ? api.url : INITIAL_API_LIST[0].url;
         }
         
         // 从描述中提取网盘链接
@@ -1078,7 +1210,9 @@
                 episodesList.innerHTML = '';
                 videoPlayer.innerHTML = '';
                 videoPlayer.poster = 'https://via.placeholder.com/1200x675?text=加载中...';
+                videoLoading.style.display = 'flex';
                 clearError();
+                updateApiStatus('加载剧集中...');
                 
                 // 切换到播放页面
                 searchPage.style.display = 'none';
@@ -1098,14 +1232,17 @@
                     
                     // 自动播放第一集
                     playEpisode(0);
+                    updateApiStatus('正常');
                 } else {
                     episodesList.innerHTML = '<div class="no-results">暂无可用剧集</div>';
                     showError('该短剧暂无可用剧集');
+                    updateApiStatus('无剧集');
                 }
             } catch (error) {
                 console.error('获取剧集失败:', error);
                 episodesList.innerHTML = '<div class="no-results">加载剧集失败</div>';
                 showError('加载剧集失败：' + error.message);
+                updateApiStatus('错误');
             }
         }
         
@@ -1139,8 +1276,9 @@
                 document.querySelector(`.episode-btn[data-index="${index}"]`).classList.add('active');
                 
                 // 显示加载状态
-                videoPlayer.poster = 'https://via.placeholder.com/1200x675?text=加载中...';
+                videoLoading.style.display = 'flex';
                 clearError();
+                updateApiStatus('加载视频中...');
                 
                 // 获取视频播放地址
                 const videoId = currentEpisodes[index].video_id;
@@ -1156,47 +1294,110 @@
                         videoUrl = videoUrl.replace('http://', 'https://');
                     }
                     
-                    // 设置视频源
-                    videoPlayer.src = videoUrl;
-                    videoPlayer.load();
+                    // 清除之前的HLS实例
+                    if (hls) {
+                        hls.destroy();
+                        hls = null;
+                    }
                     
-                    // 添加事件监听器处理视频错误
-                    const handleVideoError = () => {
-                        // 如果使用HTTPS失败，尝试原始地址
-                        if (videoUrl !== data.data.video.url) {
-                            videoPlayer.src = data.data.video.url;
-                            videoPlayer.load();
-                            videoPlayer.removeEventListener('error', handleVideoError);
-                        } else {
-                            showError('视频加载失败，请尝试其他剧集');
-                        }
-                    };
-                    
-                    videoPlayer.addEventListener('error', handleVideoError);
-                    
-                    // 尝试自动播放
-                    videoPlayer.play().catch(e => {
-                        console.log('自动播放失败:', e);
-                        videoPlayer.controls = true;
-                        showError('自动播放被阻止，请手动点击播放按钮');
-                    });
+                    // 播放视频
+                    playVideo(videoUrl);
+                    updateApiStatus('正常');
                 } else {
                     throw new Error('无法获取视频播放地址');
                 }
             } catch (error) {
                 console.error('播放失败:', error);
                 showError('视频播放失败：' + error.message);
+                updateApiStatus('错误');
+                videoLoading.style.display = 'none';
             }
+        }
+        
+        // 播放视频（支持HLS）
+        function playVideo(url) {
+            if (Hls.isSupported()) {
+                // 创建HLS实例
+                hls = new Hls();
+                hls.loadSource(url);
+                hls.attachMedia(videoPlayer);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    videoLoading.style.display = 'none';
+                    videoPlayer.play().catch(e => {
+                        console.log('自动播放失败:', e);
+                        videoPlayer.controls = true;
+                        showError('自动播放被阻止，请手动点击播放按钮');
+                    });
+                });
+                
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('HLS错误:', data);
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                showError('网络错误，请重试');
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                showError('视频格式错误');
+                                break;
+                            default:
+                                showError('视频播放失败');
+                        }
+                        videoLoading.style.display = 'none';
+                    }
+                });
+            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
+                // 原生HLS支持（Safari）
+                videoPlayer.src = url;
+                videoPlayer.addEventListener('loadedmetadata', () => {
+                    videoLoading.style.display = 'none';
+                    videoPlayer.play().catch(e => {
+                        console.log('自动播放失败:', e);
+                        videoPlayer.controls = true;
+                        showError('自动播放被阻止，请手动点击播放按钮');
+                    });
+                });
+            } else {
+                // 标准MP4视频
+                videoPlayer.src = url;
+                videoPlayer.addEventListener('loadeddata', () => {
+                    videoLoading.style.display = 'none';
+                    videoPlayer.play().catch(e => {
+                        console.log('自动播放失败:', e);
+                        videoPlayer.controls = true;
+                        showError('自动播放被阻止，请手动点击播放按钮');
+                    });
+                });
+            }
+            
+            // 添加错误监听
+            videoPlayer.addEventListener('error', () => {
+                videoLoading.style.display = 'none';
+                showError('视频加载失败，请尝试其他剧集');
+            });
         }
         
         // 返回搜索页面
         function backToSearch() {
             playerPage.style.display = 'none';
             searchPage.style.display = 'block';
-            videoPlayer.pause();
+            
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+            
+            if (videoPlayer) {
+                videoPlayer.pause();
+                videoPlayer.src = '';
+            }
+            
             currentDrama = null;
             currentEpisodes = [];
             clearError();
+            videoLoading.style.display = 'flex';
+            updateApiStatus('正常');
         }
         
         // 事件监听
@@ -1222,6 +1423,7 @@
         videoPlayer.addEventListener('error', (e) => {
             console.error('视频播放错误:', e);
             showError('视频加载失败，请尝试其他剧集或刷新页面');
+            videoLoading.style.display = 'none';
         });
     </script>
 </body>
