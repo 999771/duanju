@@ -323,6 +323,20 @@
             opacity: 0.5;
         }
         
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
         /* 分页样式 */
         .pagination {
             display: flex;
@@ -614,6 +628,9 @@
             </div>
             
             <main>
+                <!-- 错误信息区域 -->
+                <div id="error-container"></div>
+                
                 <!-- 搜索结果列表 -->
                 <div class="results-list" id="results-list">
                     <div class="loading">
@@ -639,7 +656,7 @@
             
             <div class="video-wrapper">
                 <div class="video-container">
-                    <video controls id="video-player" poster="https://via.placeholder.com/1200x675?text=加载中..."></video>
+                    <video controls id="video-player" poster="https://via.placeholder.com/1200x675?text=加载中..." crossorigin="anonymous"></video>
                 </div>
             </div>
             
@@ -664,6 +681,7 @@
         const episodesList = document.getElementById('episodes-list');
         const pagination = document.getElementById('pagination');
         const logo = document.getElementById('logo');
+        const errorContainer = document.getElementById('error-container');
         
         // 分页相关变量
         let currentPage = 1;
@@ -692,6 +710,21 @@
         // 当前可用的API列表
         let AVAILABLE_APIS = [...INITIAL_API_LIST];
         
+        // 显示错误消息
+        function showError(message) {
+            errorContainer.innerHTML = `
+                <div class="error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    ${message}
+                </div>
+            `;
+        }
+        
+        // 清除错误消息
+        function clearError() {
+            errorContainer.innerHTML = '';
+        }
+        
         // 初始化
         window.addEventListener('DOMContentLoaded', async () => {
             // 加载热门短剧
@@ -711,19 +744,24 @@
             const promises = AVAILABLE_APIS.map(api => {
                 const url = `${api.url}/?${api.searchParam}=${encodeURIComponent(query)}`;
                 
-                return fetch(url)
-                    .then(response => {
-                        if (!response.ok) throw new Error('API响应不正常');
-                        return response.json();
-                    })
-                    .then(data => ({
-                        data: data.data || [],
-                        api
-                    }))
-                    .catch(error => {
-                        console.error(`API ${api.url} 搜索失败:`, error);
-                        return { data: [], api };
-                    });
+                return fetch(url, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('API响应不正常');
+                    return response.json();
+                })
+                .then(data => ({
+                    data: data.data || [],
+                    api
+                }))
+                .catch(error => {
+                    console.error(`API ${api.url} 搜索失败:`, error);
+                    return { data: [], api };
+                });
             });
             
             const results = await Promise.all(promises);
@@ -736,6 +774,7 @@
             
             // 重置分页
             currentPage = 1;
+            clearError();
             
             // 显示加载状态
             resultsList.innerHTML = `
@@ -790,6 +829,7 @@
                     </div>
                 `;
                 pagination.innerHTML = '';
+                showError('搜索过程中发生错误，请检查网络连接或稍后重试');
             }
         }
         
@@ -875,7 +915,7 @@
                 const downloadLink = hasDownloadLink ? extractDownloadLink(drama.desc) : null;
                 
                 dramaItem.innerHTML = `
-                    <img src="${drama.cover}" alt="${drama.title}" class="drama-cover">
+                    <img src="${drama.cover}" alt="${drama.title}" class="drama-cover" crossorigin="anonymous">
                     <div class="drama-content">
                         <div>
                             <h3 class="drama-title">${drama.title}</h3>
@@ -1002,6 +1042,7 @@
                 episodesList.innerHTML = '';
                 videoPlayer.innerHTML = '';
                 videoPlayer.poster = 'https://via.placeholder.com/1200x675?text=加载中...';
+                clearError();
                 
                 // 切换到播放页面
                 searchPage.style.display = 'none';
@@ -1013,7 +1054,17 @@
                 
                 // 获取剧集列表
                 const url = `${apiUrl}/?book_id=${bookId}`;
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`获取剧集失败: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.data && data.data.video_list && data.data.video_list.length > 0) {
@@ -1024,10 +1075,12 @@
                     playEpisode(0);
                 } else {
                     episodesList.innerHTML = '<div class="no-results">暂无可用剧集</div>';
+                    showError('该短剧暂无可用剧集');
                 }
             } catch (error) {
                 console.error('获取剧集失败:', error);
                 episodesList.innerHTML = '<div class="no-results">加载剧集失败</div>';
+                showError('加载剧集失败，请检查网络连接或稍后重试');
             }
         }
         
@@ -1062,28 +1115,49 @@
                 
                 // 显示加载状态
                 videoPlayer.poster = 'https://via.placeholder.com/1200x675?text=加载中...';
+                clearError();
                 
                 // 获取视频播放地址
                 const videoId = currentEpisodes[index].video_id;
                 const url = `${currentDrama.apiUrl}/?video_id=${videoId}`;
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`获取视频地址失败: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.data && data.data.video && data.data.video.url) {
-                    videoPlayer.src = data.data.video.url;
+                    // 解决Cloudflare混合内容问题
+                    let videoUrl = data.data.video.url;
+                    
+                    // 如果视频地址是HTTP，尝试替换为HTTPS
+                    if (videoUrl.startsWith('http://')) {
+                        videoUrl = videoUrl.replace('http://', 'https://');
+                    }
+                    
+                    // 设置视频源
+                    videoPlayer.src = videoUrl;
                     videoPlayer.load();
                     
                     // 尝试自动播放
                     videoPlayer.play().catch(e => {
                         console.log('自动播放失败:', e);
                         videoPlayer.controls = true;
+                        showError('自动播放被阻止，请手动点击播放按钮');
                     });
                 } else {
-                    alert('无法获取视频播放地址');
+                    throw new Error('无法获取视频播放地址');
                 }
             } catch (error) {
                 console.error('播放失败:', error);
-                alert('视频播放失败');
+                showError('视频播放失败，请尝试其他剧集或稍后重试');
             }
         }
         
@@ -1094,6 +1168,7 @@
             videoPlayer.pause();
             currentDrama = null;
             currentEpisodes = [];
+            clearError();
         }
         
         // 事件监听
@@ -1114,6 +1189,12 @@
         });
         
         backBtn.addEventListener('click', backToSearch);
+        
+        // 监听视频错误事件
+        videoPlayer.addEventListener('error', (e) => {
+            console.error('视频播放错误:', e);
+            showError('视频加载失败，请尝试其他剧集或刷新页面');
+        });
     </script>
 </body>
 </html>
