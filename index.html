@@ -2,1630 +2,1209 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="referrer" content="no-referrer">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>短剧搜索平台 - Cloudflare优化版</title>
+    <meta name="description" content="短剧搜索与播放平台 - 海量精彩短剧，随时随地观看">
+    <meta name="keywords" content="短剧平台, 短剧搜索, 在线短剧, 短剧播放">
+    <title>短剧搜索与播放平台</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.4.3/dist/hls.min.js"></script>
+    <link rel="icon" href="https://57cool.oss-cn-chengdu.aliyuncs.com/SoftDuckResourceBank/file/home-bg.png">
     <style>
         :root {
-            --primary: #4a6bdf;
-            --secondary: #6c757d;
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --accent: #e74c3c;
             --light: #f8f9fa;
-            --dark: #343a40;
-            --border: #dee2e6;
-            --shadow: 0 2px 10px rgba(0,0,0,0.1);
-            --success: #28a745;
-            --danger: #dc3545;
-            --warning: #ffc107;
-            --info: #17a2b8;
+            --dark: #2c3e50;
+            --gray: #95a5a6;
+            --light-gray: #e0e6ed;
+            --shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
         }
-        
+
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
             color: var(--dark);
-            line-height: 1.6;
-            padding: 0;
-            margin: 0;
             min-height: 100vh;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%234a6bdf" opacity="0.03"/><path d="M20,20 Q40,5 60,20 T100,20 L100,80 Q80,95 60,80 T20,80 Z" fill="%234a6bdf" opacity="0.05"/></svg>');
-            background-size: 300px;
+            line-height: 1.6;
         }
-        
+
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-        
-        /* 搜索页面样式 */
-        .search-page {
-            background-color: rgba(255, 255, 255, 0.97);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            padding: 30px;
-            margin-top: 20px;
-            animation: fadeIn 0.5s ease-out;
-            border: 1px solid rgba(255, 255, 255, 0.7);
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        header {
+
+        /* 工具标题 */
+        .tool-header {
             text-align: center;
-            margin-bottom: 30px;
-            position: relative;
+            margin: 40px 0 30px; /* 增加顶部间距 */
         }
-        
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-bottom: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .logo:hover {
-            transform: scale(1.03);
-        }
-        
-        .logo-icon {
-            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            box-shadow: 0 4px 10px rgba(74, 107, 223, 0.3);
-        }
-        
-        h1 {
-            color: var(--dark);
-            margin-bottom: 10px;
+
+        .tool-title {
             font-size: 2.2rem;
-            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            font-weight: 700;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: var(--dark);
+            margin-bottom: 15px;
+            position: relative;
+            display: inline-block;
         }
-        
-        .tagline {
-            color: var(--secondary);
-            font-size: 1rem;
-            margin-top: -5px;
-            margin-bottom: 20px;
-            opacity: 0.8;
+
+        .tool-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border-radius: 2px;
         }
-        
+
+        .tool-subtitle {
+            color: var(--gray);
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+
+        /* 搜索区域 */
         .search-container {
             max-width: 700px;
-            margin: 0 auto 30px;
+            margin: 0 auto 20px;
             position: relative;
         }
-        
-        #search-input {
-            width: 100%;
-            padding: 16px 25px;
-            font-size: 1.05rem;
-            border: 2px solid var(--border);
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: none;
             border-radius: 50px;
-            outline: none;
-            transition: all 0.3s ease;
+            background: white;
+            color: var(--dark);
+            font-size: 1rem;
             box-shadow: var(--shadow);
-            background-color: rgba(255, 255, 255, 0.85);
+            transition: var(--transition);
+            border: 2px solid var(--light-gray);
         }
-        
-        #search-input:focus {
+
+        .search-input:focus {
+            outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(74, 107, 223, 0.2);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
         }
-        
-        #search-button {
-            position: absolute;
-            right: 8px;
-            top: 8px;
-            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
+
+        .search-input::placeholder {
+            color: var(--gray);
+        }
+
+        .search-btn {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
             color: white;
             border: none;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 10px rgba(74, 107, 223, 0.3);
-        }
-        
-        #search-button:hover {
-            transform: scale(1.05) rotate(5deg);
-            box-shadow: 0 6px 15px rgba(74, 107, 223, 0.4);
-        }
-        
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--border);
-        }
-        
-        .results-count {
-            font-size: 1.1rem;
+            border-radius: 50px;
+            padding: 0 30px;
+            font-size: 1rem;
             font-weight: 600;
-            color: var(--dark);
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
         }
         
-        .api-indicator {
-            font-size: 0.85rem;
-            background-color: rgba(74, 107, 223, 0.1);
-            color: var(--primary);
-            padding: 5px 10px;
-            border-radius: 20px;
+        /* 热搜词区域 */
+        .hot-keywords {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 25px;
+            margin-bottom: 10px;
+        }
+        
+        .hot-keyword-btn {
+            background: var(--light-gray);
+            color: var(--dark);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            font-weight: 500;
             display: flex;
             align-items: center;
             gap: 5px;
         }
         
-        .results-list {
-            border-radius: 12px;
+        .hot-keyword-btn:hover {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+        }
+        
+        .hot-keyword-btn i {
+            font-size: 0.8rem;
+        }
+
+        /* 结果区域 */
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr); /* 每行5个卡片 */
+            gap: 20px; /* 减小间隙 */
+            margin-top: 30px;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 16px;
             overflow: hidden;
+            transition: var(--transition);
             box-shadow: var(--shadow);
-            background-color: white;
-        }
-        
-        .drama-item {
-            display: flex;
-            padding: 20px;
-            border-bottom: 1px solid var(--border);
-            transition: all 0.2s ease;
-            animation: slideIn 0.4s ease-out;
-            animation-fill-mode: backwards;
-        }
-        
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        
-        .drama-item:hover {
-            background-color: rgba(74, 107, 223, 0.05);
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        .drama-cover {
-            width: 120px;
-            height: 160px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-right: 20px;
-            flex-shrink: 0;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s;
-            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
-        }
-        
-        .drama-item:hover .drama-cover {
-            transform: scale(1.03);
-        }
-        
-        .drama-content {
-            flex-grow: 1;
+            cursor: pointer;
+            height: 100%;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
         }
-        
-        .drama-title {
-            font-size: 1.25rem;
-            margin-bottom: 8px;
-            color: var(--dark);
-            font-weight: 700;
+
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-img {
+            width: 100%;
+            height: 160px; /* 减小高度 */
+            object-fit: cover;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .card-content {
+            padding: 15px; /* 减小内边距 */
+            flex: 1;
             display: flex;
-            align-items: center;
-            gap: 8px;
+            flex-direction: column;
         }
-        
-        .drama-source {
-            font-size: 0.8rem;
-            background-color: rgba(74, 107, 223, 0.1);
-            color: var(--primary);
-            padding: 3px 8px;
-            border-radius: 4px;
-        }
-        
-        .drama-desc {
-            font-size: 0.95rem;
-            color: var(--secondary);
-            margin-bottom: 15px;
+
+        .card-title {
+            font-size: 1rem; /* 减小字体 */
+            font-weight: 600;
+            margin-bottom: 8px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            line-height: 1.5;
         }
-        
-        .drama-meta {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            gap: 12px;
-        }
-        
-        .drama-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .download-link {
-            padding: 8px 16px;
-            background: linear-gradient(135deg, var(--success) 0%, #1e7e34 100%);
-            color: white;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
-        }
-        
-        .download-link:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
-        }
-        
-        .view-btn {
-            padding: 8px 20px;
-            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
-            color: white;
-            border-radius: 50px;
-            font-size: 0.9rem;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 8px rgba(74, 107, 223, 0.3);
-        }
-        
-        .view-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(74, 107, 223, 0.4);
-        }
-        
-        .loading {
-            text-align: center;
-            padding: 50px;
-            font-size: 1.1rem;
-            color: var(--secondary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-        
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid rgba(74, 107, 223, 0.2);
-            border-top: 5px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .no-results {
-            text-align: center;
-            padding: 50px;
-            font-size: 1.1rem;
-            color: var(--secondary);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .no-results i {
-            font-size: 3rem;
-            color: var(--secondary);
-            opacity: 0.5;
-        }
-        
-        .error-message {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 20px 0;
-            text-align: center;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        
-        /* 分页样式 */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 30px;
-            gap: 10px;
-        }
-        
-        .page-btn {
-            padding: 8px 16px;
-            background-color: white;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        
-        .page-btn:hover:not(.disabled) {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-        
-        .page-btn.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            font-weight: 600;
-            box-shadow: 0 4px 8px rgba(74, 107, 223, 0.2);
-        }
-        
-        .page-btn.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        /* 播放页面样式 */
-        .player-page {
-            display: none;
-            padding: 0;
-            max-width: 1400px;
-            margin: 20px auto;
-            background-color: rgba(255, 255, 255, 0.97);
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.7);
-        }
-        
-        .player-header {
-            position: sticky;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: linear-gradient(135deg, var(--primary) 0%, #6a11cb 100%);
-            padding: 15px 25px;
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        .back-btn {
-            background-color: white;
-            color: var(--primary);
-            border: none;
-            border-radius: 50px;
-            padding: 10px 20px 10px 15px;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            font-weight: 600;
-        }
-        
-        .back-btn:hover {
-            background-color: #f8f9fa;
-            transform: translateX(-5px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-        
-        .player-title {
-            color: white;
-            font-size: 1.2rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            flex-grow: 1;
-            font-weight: 600;
-        }
-        
-        .video-wrapper {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 25px;
-        }
-        
-        .video-container {
-            width: 100%;
-            background-color: #000;
-            position: relative;
-            padding-top: 56.25%; /* 16:9 宽高比 */
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-        
-        video {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            outline: none;
-        }
-        
-        .video-loading {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            z-index: 10;
-        }
-        
-        .video-loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-        
-        .episodes-container {
-            padding: 15px 25px 30px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .episodes-title {
-            font-size: 1.3rem;
-            margin-bottom: 20px;
-            color: var(--dark);
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .episodes-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 12px;
-        }
-        
-        .episode-btn {
-            padding: 10px 15px;
-            background-color: var(--light);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.95rem;
-            font-weight: 500;
-        }
-        
-        .episode-btn:hover {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(74, 107, 223, 0.2);
-        }
-        
-        .episode-btn.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            font-weight: 600;
-            box-shadow: 0 4px 8px rgba(74, 107, 223, 0.3);
-        }
-        
-        .proxy-info {
-            padding: 12px;
-            background-color: #e3f2fd;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            text-align: center;
-            margin-top: 15px;
-            color: #1976d2;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        
-        .tech-info {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
-        
-        .tech-item {
+
+        .card-info {
+            color: var(--gray);
+            font-size: 0.8rem; /* 减小字体 */
+            margin-bottom: 5px;
             display: flex;
             align-items: center;
             gap: 5px;
-            font-size: 0.85rem;
-            background-color: rgba(23, 162, 184, 0.1);
-            color: var(--info);
-            padding: 5px 10px;
-            border-radius: 20px;
         }
-        
-        .player-mode {
+
+        .card-desc {
+            color: var(--gray);
+            font-size: 0.8rem; /* 减小字体 */
+            margin-top: auto;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* 减少行数 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .pagination {
             display: flex;
             justify-content: center;
-            margin-top: 15px;
+            margin-top: 40px;
             gap: 10px;
         }
-        
-        .mode-btn {
-            padding: 8px 15px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border: 1px solid var(--primary);
-            border-radius: 30px;
-            font-size: 0.8rem;
+
+        .page-btn {
+            background: white;
+            color: var(--dark);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: var(--transition);
+            font-weight: 600;
+            box-shadow: var(--shadow);
         }
-        
-        .mode-btn.active {
-            background-color: var(--primary);
+
+        .page-btn:hover, .page-btn.active {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
             color: white;
         }
-        
-        .debug-panel {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 0.85rem;
-            border: 1px solid var(--border);
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 40px 0;
+            display: none;
         }
-        
-        .debug-title {
-            font-weight: 600;
-            margin-bottom: 10px;
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(52, 152, 219, 0.1);
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin: 30px auto;
+            max-width: 600px;
+            display: none;
+        }
+
+        /* 播放器页面样式 */
+        .player-page {
+            display: none;
+            padding: 20px 0;
+        }
+
+        .back-btn {
+            background: var(--light-gray);
             color: var(--dark);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+
+        .back-btn:hover {
+            background: #d1d8e0;
+        }
+
+        .player-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: #000;
+        }
+
+        #video-player {
+            width: 100%;
+            display: block;
+            aspect-ratio: 16/9;
+        }
+
+        .player-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 15px 0;
+        }
+
+        .control-btn {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        .control-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .quality-selector {
+            background: var(--light-gray);
+            color: var(--dark);
+            border: none;
+            padding: 0 15px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             gap: 8px;
         }
-        
-        .debug-content {
-            font-family: monospace;
-            white-space: pre-wrap;
-            word-break: break-all;
-            max-height: 200px;
-            overflow-y: auto;
-            background-color: #2c3e50;
-            color: #ecf0f1;
-            padding: 10px;
-            border-radius: 5px;
+
+        .quality-selector:hover {
+            background: #d1d8e0;
         }
-        
+
+        .quality-selector select {
+            background: transparent;
+            color: var(--dark);
+            border: none;
+            outline: none;
+            padding: 12px 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .quality-selector select option {
+            background: white;
+            color: var(--dark);
+        }
+
+        .episode-info {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .episode-title {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .episode-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+
+        .episode-desc {
+            line-height: 1.6;
+            color: var(--dark);
+        }
+
+        .episodes-container {
+            margin-top: 20px;
+        }
+
+        .episodes-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--dark);
+        }
+
+        .episodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .episode-item {
+            background: var(--light-gray);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--dark);
+            font-weight: 500;
+        }
+
+        .episode-item:hover {
+            background: #d1d8e0;
+        }
+
+        .episode-item.active {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            font-weight: 600;
+        }
+
+        .quality-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--light-gray);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--dark);
+        }
+
+        .quality-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .quality-720 .dot {
+            background-color: var(--secondary);
+        }
+
+        .quality-1080 .dot {
+            background-color: var(--primary);
+        }
+
+        .quality-original .dot {
+            background-color: var(--accent);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1200px) {
+            .results-container {
+                grid-template-columns: repeat(4, 1fr); /* 中等屏幕每行4个 */
+            }
+        }
+
         @media (max-width: 992px) {
-            .container {
-                padding: 15px;
+            .results-container {
+                grid-template-columns: repeat(3, 1fr); /* 小屏幕每行3个 */
             }
-            
-            .search-page {
-                padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .results-container {
+                grid-template-columns: repeat(3, 1fr); /* 平板每行3个 */
             }
-            
-            h1 {
+
+            .tool-title {
                 font-size: 1.8rem;
             }
-            
-            .drama-item {
-                padding: 15px;
-            }
-            
-            .drama-cover {
-                width: 100px;
-                height: 140px;
-            }
-            
-            .episodes-list {
-                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .drama-item {
+
+            .search-box {
                 flex-direction: column;
             }
-            
-            .drama-cover {
-                width: 100%;
-                height: auto;
-                max-height: 200px;
-                margin-right: 0;
-                margin-bottom: 15px;
+
+            .search-btn {
+                padding: 15px;
+                justify-content: center;
             }
-            
-            .drama-meta {
+
+            .player-container {
                 flex-direction: column;
-                align-items: flex-start;
             }
-            
-            .drama-actions {
-                width: 100%;
-                justify-content: flex-end;
-            }
-            
-            .video-wrapper {
-                padding: 15px;
-            }
-            
-            .episodes-container {
-                padding: 15px;
-            }
-            
-            .back-btn {
-                padding: 8px 15px 8px 12px;
+
+            .control-btn {
+                padding: 10px 15px;
                 font-size: 0.9rem;
             }
+
+            .episodes-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+
+            .player-controls {
+                gap: 10px;
+            }
             
-            .pagination {
-                flex-wrap: wrap;
+            .hot-keywords {
+                gap: 10px;
+            }
+            
+            .hot-keyword-btn {
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .results-container {
+                grid-template-columns: repeat(2, 1fr); /* 手机每行2个 */
+            }
+
+            .tool-title {
+                font-size: 1.6rem;
+            }
+
+            .episodes-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            }
+
+            .quality-selector {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .player-controls {
+                flex-direction: column;
+            }
+            
+            .hot-keywords {
+                gap: 8px;
+            }
+            
+            .hot-keyword-btn {
+                padding: 5px 10px;
+                font-size: 0.8rem;
             }
         }
         
         @media (max-width: 480px) {
-            h1 {
-                font-size: 1.6rem;
-            }
-            
-            .drama-title {
-                font-size: 1.15rem;
-            }
-            
-            .drama-desc {
-                font-size: 0.9rem;
-            }
-            
-            .view-btn, .download-link {
-                padding: 7px 14px;
-                font-size: 0.85rem;
-            }
-            
-            .episodes-list {
-                grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
-            }
-            
-            .page-btn {
-                padding: 6px 12px;
-                font-size: 0.9rem;
-            }
-            
-            .tech-info {
-                flex-direction: column;
-                align-items: center;
-                gap: 8px;
+            .results-container {
+                grid-template-columns: 1fr; /* 超小屏幕每行1个 */
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- 搜索页面 -->
-        <div class="search-page" id="search-page">
-            <header>
-                <div class="logo" id="logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-film"></i>
-                    </div>
-                    <h1>短剧搜索平台</h1>
-                </div>
-                <p class="tagline">海量短剧资源，一站式搜索与播放体验</p>
-                
-                <div class="search-container">
-                    <input type="text" id="search-input" placeholder="输入短剧名称搜索...">
-                    <button id="search-button"><i class="fas fa-search"></i></button>
-                </div>
-            </header>
-            
-            <div class="results-header">
-                <div class="results-count" id="results-count">热门短剧推荐</div>
-                <div class="api-indicator">
-                    <i class="fas fa-plug"></i>
-                    <span id="current-api">服务状态: 正常</span>
-                </div>
-            </div>
-            
-            <main>
-                <!-- 错误信息区域 -->
-                <div id="error-container"></div>
-                
-                <!-- 搜索结果列表 -->
-                <div class="results-list" id="results-list">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>正在加载短剧资源，请稍候...</div>
-                    </div>
-                </div>
-                
-                <!-- 分页控件 -->
-                <div class="pagination" id="pagination"></div>
-            </main>
-        </div>
-        
-        <!-- 播放页面 -->
-        <div class="player-page" id="player-page">
-            <div class="player-header">
-                <button class="back-btn" id="back-btn">
-                    <i class="fas fa-arrow-left"></i>
-                    返回搜索
+<div class="container">
+    <!-- 工具标题 -->
+    <div class="tool-header">
+        <h2 class="tool-title">短剧搜索与播放平台</h2>
+        <p class="tool-subtitle">发现精彩短剧，随时随地畅享视听盛宴</p>
+    </div>
+
+    <!-- 搜索页面 -->
+    <div id="searchPage">
+        <!-- 搜索区域 -->
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" class="search-input" placeholder="输入短剧名称进行搜索...">
+                <button id="searchBtn" class="search-btn">
+                    <i class="fas fa-search"></i> 搜索
                 </button>
-                <div class="player-title" id="player-title"></div>
             </div>
             
+            <!-- 热搜词区域 -->
+            <div class="hot-keywords">
+                <button class="hot-keyword-btn" data-keyword="古装">
+                    <i class="fas fa-crown"></i> 古装
+                </button>
+                <button class="hot-keyword-btn" data-keyword="穿越">
+                    <i class="fas fa-hourglass-half"></i> 穿越
+                </button>
+                <button class="hot-keyword-btn" data-keyword="重生">
+                    <i class="fas fa-redo"></i> 重生
+                </button>
+                <button class="hot-keyword-btn" data-keyword="都市">
+                    <i class="fas fa-city"></i> 都市
+                </button>
+                <button class="hot-keyword-btn" data-keyword="言情">
+                    <i class="fas fa-heart"></i> 言情
+                </button>
+                <button class="hot-keyword-btn" data-keyword="悬疑">
+                    <i class="fas fa-search"></i> 悬疑
+                </button>
+            </div>
+        </div>
+
+        <div class="loading" id="searchLoading">
+            <div class="spinner"></div>
+            <p>正在搜索短剧，请稍候...</p>
+        </div>
+
+        <div class="error-message" id="searchError">
+            <i class="fas fa-exclamation-circle"></i>
+            <p id="errorText">请求错误，请稍后再试</p>
+        </div>
+
+        <!-- 结果区域 -->
+        <div class="results-container" id="resultsContainer">
+            <!-- 搜索结果将通过JS动态填充 -->
+        </div>
+
+        <div class="pagination" id="pagination">
+            <!-- 分页按钮将通过JS动态生成 -->
+        </div>
+    </div>
+
+    <!-- 播放页面 -->
+    <div id="playerPage" class="player-page">
+        <button class="back-btn" id="backToDetail">
+            <i class="fas fa-arrow-left"></i> 返回剧集列表
+        </button>
+
+        <div class="player-container">
             <div class="video-wrapper">
-                <div class="video-container">
-                    <div class="video-loading" id="video-loading">
-                        <div class="video-loading-spinner"></div>
-                        <div id="loading-text">正在加载视频，请稍候...</div>
-                    </div>
-                    <video controls id="video-player" poster="https://via.placeholder.com/1200x675?text=加载中..." crossorigin="anonymous" referrerpolicy="no-referrer"></video>
+                <video id="video-player" controls playsinline></video>
+            </div>
+
+            <div class="player-controls">
+                <button class="control-btn" id="prevBtn">
+                    <i class="fas fa-step-backward"></i> 上一集
+                </button>
+                <button class="control-btn" id="nextBtn">
+                    <i class="fas fa-step-forward"></i> 下一集
+                </button>
+                <button class="control-btn" id="fullscreenBtn">
+                    <i class="fas fa-expand"></i> 全屏播放
+                </button>
+
+                <div class="quality-selector">
+                    <i class="fas fa-hd"></i>
+                    <select id="qualitySelect">
+                        <option value="720p">高清 720p</option>
+                        <option value="1080p" selected>超清 1080p</option>
+                    </select>
                 </div>
             </div>
-            
+
+            <div class="episode-info">
+                <h2 class="episode-title" id="currentEpisodeTitle">正在加载...</h2>
+                <div class="episode-meta">
+                        <span class="quality-indicator quality-1080" id="episodeQuality">
+                            <span class="dot"></span> 1080p
+                        </span>
+                    <span id="episodeDuration">时长: 0秒</span>
+                    <span id="episodeSize">大小: 0MB</span>
+                </div>
+                <p class="episode-desc" id="episodeDesc"></p>
+            </div>
+
             <div class="episodes-container">
-                <h3 class="episodes-title"><i class="fas fa-list"></i> 剧集列表</h3>
-                <div class="episodes-list" id="episodes-list"></div>
-                
-                <div class="player-mode">
-                    <button class="mode-btn active" data-mode="direct">直接播放</button>
-                    <button class="mode-btn" data-mode="proxy">代理播放</button>
-                    <button class="mode-btn" data-mode="hls">HLS模式</button>
-                </div>
-                
-                <div class="proxy-info">
-                    <i class="fas fa-info-circle"></i>
-                    <span id="proxy-info-text">当前使用直接播放模式，如遇问题请尝试其他模式</span>
-                </div>
-                
-                <div class="debug-panel">
-                    <div class="debug-title">
-                        <i class="fas fa-bug"></i> 调试信息
-                    </div>
-                    <div class="debug-content" id="debug-output">系统初始化完成，等待操作...</div>
-                </div>
-                
-                <div class="tech-info">
-                    <div class="tech-item">
-                        <i class="fas fa-bolt"></i> 视频错误修复
-                    </div>
-                    <div class="tech-item">
-                        <i class="fas fa-video"></i> HLS支持
-                    </div>
-                    <div class="tech-item">
-                        <i class="fas fa-cloud"></i> Cloudflare优化
-                    </div>
+                <h3 class="episodes-title">
+                    <span>剧集列表</span>
+                </h3>
+                <div class="episodes-grid" id="episodesGrid">
+                    <!-- 剧集列表将通过JS动态填充 -->
                 </div>
             </div>
         </div>
     </div>
-    
-    <script>
-        // DOM元素
-        const searchPage = document.getElementById('search-page');
-        const playerPage = document.getElementById('player-page');
-        const searchInput = document.getElementById('search-input');
-        const searchButton = document.getElementById('search-button');
-        const resultsList = document.getElementById('results-list');
-        const resultsCount = document.getElementById('results-count');
-        const backBtn = document.getElementById('back-btn');
-        const playerTitle = document.getElementById('player-title');
-        const videoPlayer = document.getElementById('video-player');
-        const episodesList = document.getElementById('episodes-list');
-        const pagination = document.getElementById('pagination');
-        const logo = document.getElementById('logo');
-        const errorContainer = document.getElementById('error-container');
-        const videoLoading = document.getElementById('video-loading');
-        const loadingText = document.getElementById('loading-text');
-        const currentApiIndicator = document.getElementById('current-api');
-        const proxyInfoText = document.getElementById('proxy-info-text');
-        const modeButtons = document.querySelectorAll('.mode-btn');
-        const debugOutput = document.getElementById('debug-output');
-        
-        // 分页相关变量
-        let currentPage = 1;
-        const perPage = 8;
-        let totalPages = 1;
-        
-        // 当前状态
-        let currentDrama = null;
-        let currentEpisodes = [];
-        let currentSearchResults = [];
-        let hls = null;
-        let currentPlayMode = 'direct'; // 'direct', 'proxy', 'hls'
-        
-        // 初始API列表
-        const INITIAL_API_LIST = [
-            { 
-                url: 'https://api.xingzhige.com/API/playlet', 
-                name: '星之阁',
-                searchParam: 'keyword'
-            },
-            { 
-                url: 'https://ys.110t.cn/api', 
-                name: '云视短剧',
-                searchParam: 'keyword'
-            }
-        ];
-        
-        // 代理服务列表（解决跨域问题）
-        const PROXY_SERVICES = [
-            'https://api.allorigins.win/raw?url=',
-            'https://corsproxy.io/?',
-            'https://api.codetabs.com/v1/proxy?quest=',
-            'https://thingproxy.freeboard.io/fetch/',
-            'https://proxy.cors.sh/'
-        ];
-        
-        // 当前使用的代理索引
-        let currentProxyIndex = 0;
-        
-        // 添加调试信息
-        function addDebugInfo(message) {
-            const timestamp = new Date().toLocaleTimeString();
-            debugOutput.textContent += `[${timestamp}] ${message}\n`;
-            debugOutput.scrollTop = debugOutput.scrollHeight;
-        }
-        
-        // 显示错误消息
-        function showError(message) {
-            errorContainer.innerHTML = `
-                <div class="error-message">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    ${message}
-                </div>
-            `;
-            addDebugInfo(`错误: ${message}`);
-        }
-        
-        // 清除错误消息
-        function clearError() {
-            errorContainer.innerHTML = '';
-        }
-        
-        // 更新API状态指示器
-        function updateApiStatus(status) {
-            currentApiIndicator.textContent = `服务状态: ${status}`;
-            addDebugInfo(`状态更新: ${status}`);
-        }
-        
-        // 初始化
-        window.addEventListener('DOMContentLoaded', async () => {
-            // 加载热门短剧
-            searchDrama('热门');
-            updateApiStatus('正常');
-            addDebugInfo('系统初始化完成');
-            addDebugInfo('视频错误修复已启用');
-            
-            // 添加标题点击刷新功能
-            logo.addEventListener('click', () => {
-                searchInput.value = '';
-                searchDrama('热门');
-            });
-            
-            // 播放模式切换
-            modeButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    modeButtons.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    currentPlayMode = btn.dataset.mode;
-                    
-                    if (currentPlayMode === 'direct') {
-                        proxyInfoText.textContent = '当前使用直接播放模式，如遇问题请尝试其他模式';
-                    } else if (currentPlayMode === 'proxy') {
-                        proxyInfoText.textContent = '当前使用代理播放模式，加载可能需要10-20秒';
-                    } else {
-                        proxyInfoText.textContent = '当前使用HLS模式，支持流媒体播放';
-                    }
-                    
-                    addDebugInfo(`切换到播放模式: ${currentPlayMode}`);
-                    
-                    // 重新播放当前剧集
-                    const activeEpisode = document.querySelector('.episode-btn.active');
-                    if (activeEpisode) {
-                        const index = parseInt(activeEpisode.dataset.index);
-                        playEpisode(index);
-                    }
-                });
+</div>
+
+<script>
+    // 全局变量
+    let currentPage = 1;
+    let totalPages = 1;
+    let currentDrama = null;
+    let currentEpisodeIndex = 0;
+    let videoList = [];
+    let currentQuality = '1080p'; // 默认清晰度改为1080p
+
+    // DOM元素
+    const searchPage = document.getElementById('searchPage');
+    const playerPage = document.getElementById('playerPage');
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const pagination = document.getElementById('pagination');
+    const searchLoading = document.getElementById('searchLoading');
+    const searchError = document.getElementById('searchError');
+    const errorText = document.getElementById('errorText');
+    const backToDetail = document.getElementById('backToDetail');
+    const videoPlayer = document.getElementById('video-player');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const qualitySelect = document.getElementById('qualitySelect');
+    const currentEpisodeTitle = document.getElementById('currentEpisodeTitle');
+    const episodeQuality = document.getElementById('episodeQuality');
+    const episodeDuration = document.getElementById('episodeDuration');
+    const episodeSize = document.getElementById('episodeSize');
+    const episodeDesc = document.getElementById('episodeDesc');
+    const episodesGrid = document.getElementById('episodesGrid');
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        // 绑定事件
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        // 热搜词按钮点击事件
+        document.querySelectorAll('.hot-keyword-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const keyword = btn.getAttribute('data-keyword');
+                searchInput.value = keyword;
+                performSearch();
             });
         });
-        
-        // 使用代理获取数据
-        async function fetchWithProxy(url) {
-            addDebugInfo(`开始请求: ${url}`);
-            
-            try {
-                let finalUrl = url;
-                
-                if (currentPlayMode === 'proxy' || currentPlayMode === 'hls') {
-                    const proxyService = PROXY_SERVICES[currentProxyIndex];
-                    finalUrl = proxyService + encodeURIComponent(url);
-                    addDebugInfo(`使用代理: ${proxyService}`);
-                }
-                
-                const response = await fetch(finalUrl, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`请求失败: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                addDebugInfo(`请求成功: ${url}`);
-                return data;
-            } catch (error) {
-                console.error('请求失败:', error);
-                addDebugInfo(`请求失败: ${error.message}`);
-                
-                // 切换到下一个代理
-                currentProxyIndex = (currentProxyIndex + 1) % PROXY_SERVICES.length;
-                addDebugInfo(`切换到代理: ${PROXY_SERVICES[currentProxyIndex]}`);
-                
-                if (currentProxyIndex === 0) {
-                    throw new Error('所有代理服务均失败，请稍后重试');
-                }
-                
-                // 重试
-                return fetchWithProxy(url);
-            }
-        }
-        
-        // 搜索短剧
-        async function searchDrama(query) {
-            if (!query.trim()) return;
-            
-            // 重置分页
-            currentPage = 1;
-            clearError();
-            updateApiStatus('搜索中...');
-            addDebugInfo(`开始搜索: "${query}"`);
-            
-            // 显示加载状态
-            resultsList.innerHTML = `
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <div>正在搜索短剧资源，请稍候...</div>
-                </div>
-            `;
-            
-            try {
-                const apiResults = await Promise.all(
-                    INITIAL_API_LIST.map(async (api) => {
-                        const url = `${api.url}/?${api.searchParam}=${encodeURIComponent(query)}`;
-                        try {
-                            const data = await fetchWithProxy(url);
-                            return {
-                                data: data.data || [],
-                                api
-                            };
-                        } catch (error) {
-                            console.error(`API ${api.url} 搜索失败:`, error);
-                            addDebugInfo(`API ${api.url} 搜索失败: ${error.message}`);
-                            return { data: [], api };
-                        }
-                    })
-                );
-                
-                // 合并所有API的结果
-                let allResults = [];
-                apiResults.forEach(({data, api}) => {
-                    const optimized = optimizeSearchResults(data, query);
-                    // 标记来源
-                    const marked = optimized.map(item => ({
-                        ...item,
-                        source: api.name
-                    }));
-                    allResults = [...allResults, ...marked];
-                });
-                
-                // 去重并排序
-                const uniqueResults = removeDuplicates(allResults);
-                currentSearchResults = uniqueResults;
-                
-                // 更新结果计数
-                resultsCount.textContent = query === '热门' ? 
-                    '热门短剧推荐' : 
-                    `找到 ${currentSearchResults.length} 部相关短剧`;
-                
-                if (currentSearchResults.length === 0) {
-                    resultsList.innerHTML = `
-                        <div class="no-results">
-                            <i class="fas fa-search"></i>
-                            <div>未找到相关短剧，请尝试其他关键词</div>
-                        </div>
-                    `;
-                    pagination.innerHTML = '';
-                    updateApiStatus('无结果');
-                    addDebugInfo('未找到相关短剧');
-                    return;
-                }
-                
-                displayResults();
-                updateApiStatus('正常');
-                addDebugInfo(`找到 ${currentSearchResults.length} 部相关短剧`);
-            } catch (error) {
-                console.error('搜索失败:', error);
-                resultsList.innerHTML = `
-                    <div class="no-results">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <div>搜索失败，请稍后重试</div>
-                    </div>
-                `;
-                pagination.innerHTML = '';
-                showError('搜索过程中发生错误：' + error.message);
-                updateApiStatus('错误');
-                addDebugInfo(`搜索失败: ${error.message}`);
-            }
-        }
-        
-        // 去重函数
-        function removeDuplicates(results) {
-            const seen = new Set();
-            return results.filter(item => {
-                const key = `${item.title}_${item.desc}`;
-                if (!seen.has(key)) {
-                    seen.add(key);
-                    return true;
-                }
-                return false;
-            }).sort((a, b) => b.score - a.score);
-        }
-        
-        // 优化搜索结果
-        function optimizeSearchResults(results, query) {
-            const queryLower = query.toLowerCase();
-            
-            return results
-                .map(item => {
-                    // 计算匹配分数
-                    let score = 0;
-                    const title = item.title.toLowerCase();
-                    const desc = item.desc ? item.desc.toLowerCase() : '';
-                    
-                    // 标题匹配加分
-                    if (title.includes(queryLower)) {
-                        score += 100;
-                        // 完全匹配额外加分
-                        if (title === queryLower) score += 50;
-                        // 匹配位置越靠前加分越多
-                        const pos = title.indexOf(queryLower);
-                        score += (title.length - pos) / title.length * 30;
-                    }
-                    
-                    // 描述匹配加分
-                    if (desc.includes(queryLower)) {
-                        score += 30;
-                    }
-                    
-                    // 匹配词长度比例加分
-                    score += (queryLower.length / Math.max(title.length, 1)) * 20;
-                    
-                    // 热门推荐额外加分
-                    if (query === '热门') score += 40;
-                    
-                    return { ...item, score };
-                })
-                .filter(item => item.score > 40); // 过滤低分结果
-        }
-        
-        // 显示搜索结果（带分页）
-        function displayResults() {
-            if (!currentSearchResults || currentSearchResults.length === 0) {
-                resultsList.innerHTML = `
-                    <div class="no-results">
-                        <i class="fas fa-search"></i>
-                        <div>未找到相关短剧，请尝试其他关键词</div>
-                    </div>
-                `;
-                pagination.innerHTML = '';
-                return;
-            }
-            
-            // 计算分页
-            const startIndex = (currentPage - 1) * perPage;
-            const endIndex = Math.min(startIndex + perPage, currentSearchResults.length);
-            const pageResults = currentSearchResults.slice(startIndex, endIndex);
-            totalPages = Math.ceil(currentSearchResults.length / perPage);
-            
-            // 渲染结果
-            resultsList.innerHTML = '';
-            
-            pageResults.forEach((drama, index) => {
-                const dramaItem = document.createElement('div');
-                dramaItem.className = 'drama-item';
-                dramaItem.style.animationDelay = `${index * 0.05}s`;
-                
-                // 检查是否有网盘链接
-                const hasDownloadLink = drama.desc && (drama.desc.includes('网盘') || drama.desc.includes('下载'));
-                const downloadLink = hasDownloadLink ? extractDownloadLink(drama.desc) : null;
-                
-                dramaItem.innerHTML = `
-                    <img src="${drama.cover}" alt="${drama.title}" class="drama-cover" crossorigin="anonymous">
-                    <div class="drama-content">
-                        <div>
-                            <h3 class="drama-title">
-                                ${drama.title}
-                                <span class="drama-source">${drama.source}</span>
-                            </h3>
-                            <p class="drama-desc">${drama.desc || '暂无描述'}</p>
-                        </div>
-                        <div class="drama-meta">
-                            <div class="drama-actions">
-                                ${downloadLink ? 
-                                    `<a href="${downloadLink}" class="download-link" target="_blank">
-                                        <i class="fas fa-download"></i> 网盘下载
-                                    </a>` : 
-                                    ''}
-                                <button class="view-btn" data-book-id="${drama.book_id}" data-title="${drama.title}" data-api="${drama.source}">
-                                    <i class="fas fa-play"></i> 播放剧集
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                resultsList.appendChild(dramaItem);
-            });
-            
-            // 为查看剧集按钮添加事件
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const bookId = btn.dataset.bookId;
-                    const title = btn.dataset.title;
-                    const source = btn.dataset.api;
-                    showPlayerPage(bookId, title, source);
-                });
-            });
-            
-            // 渲染分页控件
-            renderPagination();
-        }
-        
-        // 渲染分页控件
-        function renderPagination() {
-            if (totalPages <= 1) {
-                pagination.innerHTML = '';
-                return;
-            }
-            
-            let paginationHTML = '';
-            
-            // 上一页按钮
-            paginationHTML += `
-                <button class="page-btn prev-btn ${currentPage === 1 ? 'disabled' : ''}">
-                    <i class="fas fa-chevron-left"></i>
-                </button>
-            `;
-            
-            // 页码按钮
-            const maxVisiblePages = 5;
-            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-            
-            if (endPage - startPage < maxVisiblePages - 1) {
-                startPage = Math.max(1, endPage - maxVisiblePages + 1);
-            }
-            
-            for (let i = startPage; i <= endPage; i++) {
-                paginationHTML += `
-                    <button class="page-btn ${i === currentPage ? 'active' : ''}">${i}</button>
-                `;
-            }
-            
-            // 下一页按钮
-            paginationHTML += `
-                <button class="page-btn next-btn ${currentPage === totalPages ? 'disabled' : ''}">
-                    <i class="fas fa-chevron-right"></i>
-                </button>
-            `;
-            
-            pagination.innerHTML = paginationHTML;
-            
-            // 添加事件监听
-            document.querySelectorAll('.page-btn:not(.prev-btn):not(.next-btn)').forEach(btn => {
-                if (!btn.classList.contains('disabled')) {
-                    btn.addEventListener('click', () => {
-                        currentPage = parseInt(btn.textContent);
-                        displayResults();
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                    });
-                }
-            });
-            
-            document.querySelector('.prev-btn').addEventListener('click', () => {
-                if (currentPage > 1) {
-                    currentPage--;
-                    displayResults();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-            
-            document.querySelector('.next-btn').addEventListener('click', () => {
-                if (currentPage < totalPages) {
-                    currentPage++;
-                    displayResults();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-        }
-        
-        // 根据来源找到API
-        function findApiBySource(source) {
-            const api = INITIAL_API_LIST.find(a => a.name === source);
-            return api ? api.url : INITIAL_API_LIST[0].url;
-        }
-        
-        // 从描述中提取网盘链接
-        function extractDownloadLink(desc) {
-            const urlRegex = /(https?:\/\/[^\s]+)/;
-            const match = desc.match(urlRegex);
-            return match ? match[0] : '#';
-        }
-        
-        // 显示播放页面
-        async function showPlayerPage(bookId, title, source) {
-            try {
-                // 显示加载状态
-                playerTitle.textContent = '加载中...';
-                episodesList.innerHTML = '';
-                videoPlayer.innerHTML = '';
-                videoPlayer.poster = 'https://via.placeholder.com/1200x675?text=加载中...';
-                videoLoading.style.display = 'flex';
-                loadingText.textContent = '正在加载剧集信息...';
-                clearError();
-                updateApiStatus('加载剧集中...');
-                addDebugInfo(`加载剧集: ${title} (ID: ${bookId})`);
-                
-                // 切换到播放页面
-                searchPage.style.display = 'none';
-                playerPage.style.display = 'block';
-                playerTitle.textContent = title;
-                
-                const apiUrl = findApiBySource(source);
-                currentDrama = { bookId, title, apiUrl };
-                
-                // 获取剧集列表
-                const url = `${apiUrl}/?book_id=${bookId}`;
-                addDebugInfo(`请求剧集列表: ${url}`);
-                const data = await fetchWithProxy(url);
-                
-                if (data.data && data.data.video_list && data.data.video_list.length > 0) {
-                    currentEpisodes = data.data.video_list;
-                    displayEpisodes(data.data.video_list);
-                    addDebugInfo(`获取到 ${currentEpisodes.length} 个剧集`);
-                    
-                    // 自动播放第一集
-                    playEpisode(0);
-                    updateApiStatus('正常');
-                } else {
-                    episodesList.innerHTML = '<div class="no-results">暂无可用剧集</div>';
-                    showError('该短剧暂无可用剧集');
-                    updateApiStatus('无剧集');
-                    addDebugInfo('未找到可用剧集');
-                }
-            } catch (error) {
-                console.error('获取剧集失败:', error);
-                episodesList.innerHTML = '<div class="no-results">加载剧集失败</div>';
-                showError('加载剧集失败：' + error.message);
-                updateApiStatus('错误');
-                addDebugInfo(`加载剧集失败: ${error.message}`);
-            }
-        }
-        
-        // 显示剧集列表
-        function displayEpisodes(episodes) {
-            episodesList.innerHTML = '';
-            
-            episodes.forEach((episode, index) => {
-                const episodeBtn = document.createElement('div');
-                episodeBtn.className = 'episode-btn';
-                episodeBtn.textContent = `第${index + 1}集`;
-                episodeBtn.dataset.index = index;
-                
-                episodeBtn.addEventListener('click', () => {
-                    playEpisode(index);
-                });
-                
-                episodesList.appendChild(episodeBtn);
-            });
-        }
-        
-        // 播放指定剧集
-        async function playEpisode(index) {
-            if (!currentEpisodes || !currentEpisodes[index] || !currentDrama) return;
-            
-            try {
-                // 更新活跃状态
-                document.querySelectorAll('.episode-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                document.querySelector(`.episode-btn[data-index="${index}"]`).classList.add('active');
-                
-                // 显示加载状态
-                videoLoading.style.display = 'flex';
-                loadingText.textContent = '正在加载视频...';
-                clearError();
-                updateApiStatus('加载视频中...');
-                addDebugInfo(`播放第 ${index + 1} 集`);
-                
-                // 获取视频播放地址
-                const videoId = currentEpisodes[index].video_id;
-                const url = `${currentDrama.apiUrl}/?video_id=${videoId}`;
-                addDebugInfo(`请求视频地址: ${url}`);
-                const data = await fetchWithProxy(url);
-                
-                if (data.data && data.data.video && data.data.video.url) {
-                    let videoUrl = data.data.video.url;
-                    
-                    // 如果视频地址是HTTP，尝试替换为HTTPS
-                    if (videoUrl.startsWith('http://')) {
-                        videoUrl = videoUrl.replace('http://', 'https://');
-                        addDebugInfo(`HTTP替换为HTTPS: ${videoUrl}`);
-                    }
-                    
-                    // 播放视频
-                    playVideo(videoUrl);
-                    updateApiStatus('正常');
-                    addDebugInfo(`开始播放: ${videoUrl}`);
-                } else {
-                    throw new Error('无法获取视频播放地址');
-                }
-            } catch (error) {
-                console.error('播放失败:', error);
-                showError('视频播放失败：' + error.message);
-                updateApiStatus('错误');
-                videoLoading.style.display = 'none';
-                addDebugInfo(`播放失败: ${error.message}`);
-            }
-        }
-        
-        // 播放视频（支持多种格式）
-        function playVideo(url) {
-            // 清除之前的HLS实例
-            if (hls) {
-                hls.destroy();
-                hls = null;
-            }
-            
-            // 重置视频播放器
+
+        backToDetail.addEventListener('click', () => {
+            // 停止视频播放
+            videoPlayer.pause();
+            // 重置视频源
             videoPlayer.src = '';
-            videoPlayer.load();
-            
-            // 根据播放模式处理URL
-            let finalUrl = url;
-            if (currentPlayMode === 'proxy') {
-                finalUrl = PROXY_SERVICES[currentProxyIndex] + encodeURIComponent(url);
-                loadingText.textContent = '正在通过代理加载视频...';
-                addDebugInfo(`使用代理URL: ${finalUrl}`);
-            }
-            
-            // 检查是否为HLS流
-            if (finalUrl.includes('.m3u8') || finalUrl.includes('.ts') || currentPlayMode === 'hls') {
-                playHlsVideo(finalUrl);
-            } else {
-                playDirectVideo(finalUrl);
-            }
-        }
-        
-        // 播放HLS视频
-        function playHlsVideo(url) {
-            addDebugInfo(`播放HLS视频: ${url}`);
-            
-            if (Hls.isSupported()) {
-                hls = new Hls();
-                hls.loadSource(url);
-                hls.attachMedia(videoPlayer);
-                
-                hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    videoLoading.style.display = 'none';
-                    addDebugInfo('HLS视频加载完成');
-                    videoPlayer.play().catch(e => {
-                        console.log('自动播放失败:', e);
-                        videoPlayer.controls = true;
-                        showError('自动播放被阻止，请手动点击播放按钮');
-                        addDebugInfo('自动播放被阻止');
-                    });
-                });
-                
-                hls.on(Hls.Events.ERROR, (event, data) => {
-                    console.error('HLS错误:', data);
-                    addDebugInfo(`HLS错误: ${data.type} - ${data.details}`);
-                    
-                    if (data.fatal) {
-                        switch(data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                showError('网络错误，请重试');
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                showError('视频格式错误');
-                                break;
-                            default:
-                                showError('视频播放失败');
-                        }
-                        videoLoading.style.display = 'none';
-                    }
-                });
-            } else if (videoPlayer.canPlayType('application/vnd.apple.mpegurl')) {
-                // 原生HLS支持（Safari）
-                videoPlayer.src = url;
-                videoPlayer.addEventListener('loadedmetadata', () => {
-                    videoLoading.style.display = 'none';
-                    addDebugInfo('原生HLS视频加载完成');
-                    videoPlayer.play().catch(e => {
-                        console.log('自动播放失败:', e);
-                        videoPlayer.controls = true;
-                        showError('自动播放被阻止，请手动点击播放按钮');
-                        addDebugInfo('自动播放被阻止');
-                    });
-                });
-            } else {
-                showError('您的浏览器不支持HLS视频播放');
-                videoLoading.style.display = 'none';
-                addDebugInfo('浏览器不支持HLS');
-            }
-        }
-        
-        // 播放直接视频（MP4等）
-        function playDirectVideo(url) {
-            addDebugInfo(`播放直接视频: ${url}`);
-            
-            videoPlayer.src = url;
-            videoPlayer.load();
-            
-            const playAttempt = setInterval(() => {
-                videoPlayer.play().then(() => {
-                    clearInterval(playAttempt);
-                    videoLoading.style.display = 'none';
-                    addDebugInfo('视频播放成功');
-                }).catch(e => {
-                    console.log('播放尝试失败:', e);
-                });
-            }, 500);
-            
-            // 设置超时
-            setTimeout(() => {
-                if (videoPlayer.readyState < 3) {
-                    clearInterval(playAttempt);
-                    showError('视频加载超时，请尝试其他播放模式');
-                    videoLoading.style.display = 'none';
-                    addDebugInfo('视频加载超时');
-                }
-            }, 10000);
-            
-            videoPlayer.addEventListener('loadeddata', () => {
-                clearInterval(playAttempt);
-                videoLoading.style.display = 'none';
-                addDebugInfo('视频数据加载完成');
-                videoPlayer.play().catch(e => {
-                    console.log('自动播放失败:', e);
-                    videoPlayer.controls = true;
-                    showError('自动播放被阻止，请手动点击播放按钮');
-                    addDebugInfo('自动播放被阻止');
-                });
-            });
-            
-            videoPlayer.addEventListener('error', (e) => {
-                clearInterval(playAttempt);
-                videoLoading.style.display = 'none';
-                showError('视频加载失败，请尝试其他剧集或播放模式');
-                addDebugInfo(`视频错误: ${e.target.error.code}`);
-            });
-        }
-        
-        // 返回搜索页面
-        function backToSearch() {
             playerPage.style.display = 'none';
             searchPage.style.display = 'block';
+        });
+
+        prevBtn.addEventListener('click', playPreviousEpisode);
+        nextBtn.addEventListener('click', playNextEpisode);
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+        // 清晰度切换事件
+        qualitySelect.addEventListener('change', () => {
+            currentQuality = qualitySelect.value;
+            updateQualityIndicator();
+            playEpisode(currentEpisodeIndex);
+        });
+
+        // 监听视频结束事件
+        videoPlayer.addEventListener('ended', () => {
+            if (currentEpisodeIndex < videoList.length - 1) {
+                playNextEpisode();
+            }
+        });
+
+        // 初始加载改为搜索"古装"并显示多页
+        loadInitialRecommendations();
+    });
+
+    // 执行搜索
+    function performSearch() {
+        const keyword = searchInput.value.trim();
+        if (keyword) {
+            currentPage = 1;
+            searchDrama(keyword, currentPage, false);
+        }
+    }
+
+    // 加载初始推荐内容（多页）
+    async function loadInitialRecommendations() {
+        showLoading(true);
+        hideError();
+        
+        try {
+            // 连续加载3页数据
+            const page1 = await fetchDramaPage('古装', 1);
+            const page2 = await fetchDramaPage('古装', 2);
+            const page3 = await fetchDramaPage('古装', 3);
             
-            if (hls) {
-                hls.destroy();
-                hls = null;
+            // 合并结果（最多30个）
+            let combinedResults = [];
+            if (page1 && page1.length > 0) combinedResults = combinedResults.concat(page1);
+            if (page2 && page2.length > 0) combinedResults = combinedResults.concat(page2);
+            if (page3 && page3.length > 0) combinedResults = combinedResults.concat(page3);
+            
+            // 显示合并后的结果
+            if (combinedResults.length > 0) {
+                displayResults(combinedResults, true);
+            } else {
+                showError('没有找到推荐内容');
+            }
+        } catch (error) {
+            console.error('加载推荐出错:', error);
+            showError(`请求出错: ${error.message}`);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // 获取单页数据
+    async function fetchDramaPage(keyword, page) {
+        try {
+            const url = `https://api.xingzhige.com/API/playlet/?keyword=${encodeURIComponent(keyword)}&page=${page}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP错误! 状态: ${response.status}`);
             }
             
-            if (videoPlayer) {
-                videoPlayer.pause();
-                videoPlayer.src = '';
+            // 安全解析JSON
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('JSON解析错误:', e);
+                throw new Error('服务器返回了无效数据');
             }
-            
-            currentDrama = null;
-            currentEpisodes = [];
-            clearError();
-            videoLoading.style.display = 'flex';
-            updateApiStatus('正常');
-            addDebugInfo('返回搜索页面');
+
+            if (data.code === 0 && data.data) {
+                return data.data;
+            } else {
+                console.error(`获取第${page}页失败: ${data.msg || '未知错误'}`);
+                return [];
+            }
+        } catch (error) {
+            console.error(`获取第${page}页出错:`, error);
+            return [];
+        }
+    }
+
+    // 搜索短剧
+    async function searchDrama(keyword, page, isDefault) {
+        showLoading(true);
+        hideError();
+        try {
+            const results = await fetchDramaPage(keyword, page);
+            if (results && results.length > 0) {
+                displayResults(results, isDefault);
+                if (!isDefault) {
+                    setupPagination(results.length, page);
+                }
+            } else {
+                showError('没有找到相关内容');
+            }
+        } catch (error) {
+            console.error('搜索出错:', error);
+            showError(`请求出错: ${error.message}`);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // 显示搜索结果
+    function displayResults(results, isDefault) {
+        resultsContainer.innerHTML = '';
+
+        // 修复错误：检查results是否为数组
+        if (!results || !Array.isArray(results) || results.length === 0) {
+            resultsContainer.innerHTML = `
+                <div class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                    <i class="fas fa-film" style="font-size: 3rem; margin-bottom: 20px; color: var(--gray);"></i>
+                    <h3>未找到相关短剧</h3>
+                    <p>请尝试其他关键词搜索</p>
+                </div>
+            `;
+            return;
         }
         
-        // 事件监听
-        searchButton.addEventListener('click', () => {
-            const query = searchInput.value.trim();
-            if (query) {
-                searchDrama(query);
+        // 如果是初始推荐，显示所有结果（最多30个）
+        if (isDefault) {
+            results = results.slice(0, 30);
+        }
+        
+        results.forEach(drama => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <img src="${drama.cover || 'https://via.placeholder.com/300x200?text=No+Image'}" alt="${drama.title}" class="card-img">
+                <div class="card-content">
+                    <h3 class="card-title">${drama.title}</h3>
+                    <div class="card-info">
+                        <i class="fas fa-user"></i> ${drama.author || '未知作者'}
+                    </div>
+                    <div class="card-info">
+                        <i class="fas fa-tags"></i> ${drama.type || '未知类型'}
+                    </div>
+                    <p class="card-desc">${drama.desc || '暂无简介'}</p>
+                </div>
+            `;
+
+            card.addEventListener('click', () => {
+                getDramaDetail(drama.book_id);
+            });
+
+            resultsContainer.appendChild(card);
+        });
+    }
+
+    // 设置分页
+    function setupPagination(totalItems, currentPage) {
+        pagination.innerHTML = '';
+
+        // 计算总页数（假设每页6个结果）
+        totalPages = Math.ceil(totalItems / 6);
+
+        // 添加上一页按钮
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'page-btn';
+        prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+        prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                searchDrama(searchInput.value.trim(), currentPage, false);
             }
         });
-        
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const query = searchInput.value.trim();
-                if (query) {
-                    searchDrama(query);
+        pagination.appendChild(prevBtn);
+
+        // 添加页码按钮
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+            pageBtn.textContent = i;
+            pageBtn.addEventListener('click', () => {
+                if (i !== currentPage) {
+                    currentPage = i;
+                    searchDrama(searchInput.value.trim(), currentPage, false);
                 }
+            });
+            pagination.appendChild(pageBtn);
+        }
+
+        // 添加下一页按钮
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'page-btn';
+        nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+        nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                searchDrama(searchInput.value.trim(), currentPage, false);
             }
         });
+        pagination.appendChild(nextBtn);
+    }
+
+    // 获取短剧详情
+    async function getDramaDetail(bookId) {
+        showLoading(true);
+        hideError();
+
+        try {
+            const url = `https://api.xingzhige.com/API/playlet/?book_id=${bookId}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP错误! 状态: ${response.status}`);
+            }
+            
+            // 安全解析JSON
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('JSON解析错误:', e);
+                throw new Error('服务器返回了无效数据');
+            }
+
+            if (data.code === 0 && data.data) {
+                currentDrama = data.data.detail;
+                videoList = data.data.video_list || [];
+                showPlayerPage();
+            } else {
+                showError(`获取详情失败: ${data.msg || '未知错误'}`);
+            }
+        } catch (error) {
+            console.error('获取详情出错:', error);
+            showError(`请求出错: ${error.message}`);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // 显示播放页面
+    function showPlayerPage() {
+        searchPage.style.display = 'none';
+        playerPage.style.display = 'block';
+
+        // 更新剧集信息
+        currentEpisodeTitle.textContent = currentDrama.title;
+        episodeDesc.textContent = currentDrama.desc || '暂无简介';
+
+        // 设置清晰度选择器为1080p
+        currentQuality = '1080p';
+        qualitySelect.value = currentQuality;
+        updateQualityIndicator();
+
+        // 渲染剧集列表
+        renderEpisodeList();
+
+        // 默认播放第一集
+        if (videoList.length > 0) {
+            currentEpisodeIndex = 0;
+            playEpisode(currentEpisodeIndex);
+        }
         
-        backBtn.addEventListener('click', backToSearch);
-        
-        // 监听视频错误事件
-        videoPlayer.addEventListener('error', (e) => {
-            console.error('视频播放错误:', e);
-            const errorCode = e.target.error ? e.target.error.code : '未知';
-            showError(`视频错误 (代码: ${errorCode})，请尝试其他播放模式`);
-            videoLoading.style.display = 'none';
-            addDebugInfo(`视频错误: ${errorCode}`);
+        // 平滑滚动到播放器位置
+        setTimeout(() => {
+            playerPage.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }
+
+    // 更新清晰度指示器
+    function updateQualityIndicator() {
+        // 只更新视频信息区域的清晰度指示器
+        const qualityClass = `quality-${currentQuality.replace('p', '')}`;
+        episodeQuality.className = `quality-indicator ${qualityClass}`;
+        episodeQuality.innerHTML = `<span class="dot"></span> ${currentQuality}`;
+    }
+
+    // 渲染剧集列表
+    function renderEpisodeList() {
+        episodesGrid.innerHTML = '';
+
+        videoList.forEach((episode, index) => {
+            const episodeItem = document.createElement('div');
+            episodeItem.className = `episode-item ${index === currentEpisodeIndex ? 'active' : ''}`;
+            episodeItem.textContent = episode.title;
+
+            episodeItem.addEventListener('click', () => {
+                currentEpisodeIndex = index;
+                playEpisode(currentEpisodeIndex);
+                updateEpisodeListSelection();
+            });
+
+            episodesGrid.appendChild(episodeItem);
         });
-    </script>
+    }
+
+    // 更新剧集列表选择状态
+    function updateEpisodeListSelection() {
+        const items = episodesGrid.querySelectorAll('.episode-item');
+        items.forEach((item, index) => {
+            item.classList.toggle('active', index === currentEpisodeIndex);
+        });
+    }
+
+    // 播放指定剧集
+    async function playEpisode(index) {
+        if (index < 0 || index >= videoList.length) return;
+
+        const videoId = videoList[index].video_id;
+
+        try {
+            const url = `https://api.xingzhige.com/API/playlet/?video_id=${videoId}&quality=${currentQuality}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP错误! 状态: ${response.status}`);
+            }
+            
+            // 安全解析JSON
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('JSON解析错误:', e);
+                throw new Error('服务器返回了无效数据');
+            }
+
+            if (data.code === 0 && data.data) {
+                const videoData = data.data.video;
+
+                // 设置视频源
+                videoPlayer.src = videoData.url;
+                videoPlayer.load();
+
+                // 更新剧集信息
+                currentEpisodeTitle.textContent = `${currentDrama.title} - ${videoList[index].title}`;
+
+                // 更新清晰度指示器
+                updateQualityIndicator();
+
+                // 更新视频信息
+                episodeDuration.textContent = `时长: ${Math.round(videoData.duration)}秒`;
+                episodeSize.textContent = `大小: ${videoData.size_str || '未知'}`;
+
+                // 更新剧集选择状态
+                updateEpisodeListSelection();
+                
+                // 设置referrer策略
+                videoPlayer.setAttribute('referrerpolicy', 'no-referrer');
+                
+                // 自动播放
+                setTimeout(() => {
+                    videoPlayer.play().catch(e => console.log('自动播放失败:', e));
+                }, 500);
+            } else {
+                showError(`获取视频失败: ${data.msg || '未知错误'}`);
+            }
+        } catch (error) {
+            console.error('播放剧集出错:', error);
+            showError(`请求出错: ${error.message}`);
+        }
+    }
+
+    // 播放上一集
+    function playPreviousEpisode() {
+        if (currentEpisodeIndex > 0) {
+            currentEpisodeIndex--;
+            playEpisode(currentEpisodeIndex);
+        }
+    }
+
+    // 播放下一集
+    function playNextEpisode() {
+        if (currentEpisodeIndex < videoList.length - 1) {
+            currentEpisodeIndex++;
+            playEpisode(currentEpisodeIndex);
+        }
+    }
+
+    // 切换全屏
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            if (videoPlayer.requestFullscreen) {
+                videoPlayer.requestFullscreen();
+            } else if (videoPlayer.mozRequestFullScreen) {
+                videoPlayer.mozRequestFullScreen();
+            } else if (videoPlayer.webkitRequestFullscreen) {
+                videoPlayer.webkitRequestFullscreen();
+            } else if (videoPlayer.msRequestFullscreen) {
+                videoPlayer.msRequestFullscreen();
+            }
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+    }
+
+    // 显示加载状态
+    function showLoading(show) {
+        searchLoading.style.display = show ? 'block' : 'none';
+    }
+
+    // 显示错误信息
+    function showError(message) {
+        errorText.textContent = message;
+        searchError.style.display = 'block';
+    }
+
+    // 隐藏错误信息
+    function hideError() {
+        searchError.style.display = 'none';
+    }
+</script>
 </body>
 </html>
